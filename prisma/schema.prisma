@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:../data/store.sqlite"
+}
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  title       String
+  slug        String    @unique
+  description String
+  imageUrl    String?
+  products    Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id           Int      @id @default(autoincrement())
+  sku          String   @unique
+  name         String   @map("title")
+  brand        String
+  categoryId   Int
+  description  String
+  price        Float
+  salePrice    Float?   @map("oldPrice")
+  rating       Float    @default(4.7)
+  reviews      Int      @default(0)
+  stock        Int      @default(0)
+  imageUrl     String?
+  images       String   @map("gallery")
+  variants     String
+  attributes   String   @map("specs")
+  tags         String
+  isNew        Boolean  @default(false)
+  isBestSeller Boolean  @default(false)
+  status       String   @default("active")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  category     Category @relation(fields: [categoryId], references: [id])
+
+  @@map("products")
+}
+
+model Order {
+  id            Int      @id @default(autoincrement())
+  customerName String
+  phone         String
+  email         String?
+  address       String
+  delivery      String   @map("deliveryMethod")
+  payment       String   @map("paymentMethod")
+  itemsJson     String   @map("items")
+  subtotal      Float
+  deliveryFee   Float
+  total         Float
+  status        String   @default("new")
+  createdAt     DateTime @default(now())
+  comment       String   @default("")
+
+  @@map("orders")
+}
+
+model Customer {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String
+  email     String?
+  createdAt DateTime @default(now())
+
+  @@map("customers")
+}
+
+model ContactMessage {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String?
+  email     String?
+  message   String
+  createdAt DateTime @default(now())
+
+  @@map("contact_messages")
+}
+
+model OperatorRequest {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String?
+  email     String?
+  topic     String
+  message   String
+  status    String   @default("new")
+  createdAt DateTime @default(now())
+
+  @@map("operator_requests")
+}
+
+model ChatMessage {
+  id            Int      @id @default(autoincrement())
+  sessionId     String
+  role          String
+  content       String
+  needsOperator Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  @@map("chat_messages")
+}

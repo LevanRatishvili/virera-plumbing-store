@@ -1,0 +1,19 @@
+{
+  "name": "virera-plumbing-store",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "check": "node --check src/server.js && node --check public/app.js",
+    "prisma:validate": "prisma validate"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "prisma": "^6.16.0"
+  }
+}
