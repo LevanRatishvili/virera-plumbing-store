@@ -50,21 +50,41 @@ button, .btn, input, select, textarea { min-width: 0; }
 }
 .topbar-grid {
   display: grid;
-  grid-template-columns: auto minmax(260px, 1fr) auto auto;
+  grid-template-columns: 96px minmax(240px, 360px) minmax(max-content, 1fr) auto;
   align-items: center;
-  gap: 16px;
-  padding: 14px 0;
+  gap: 20px;
+  padding: 16px 0 14px;
 }
-.brand { display: inline-flex; align-items: center; gap: 13px; font-weight: 950; color: var(--text); letter-spacing: .02em; min-width: 0; }
+.brand {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 92px;
+  min-width: 92px;
+  color: var(--gold);
+  text-align: center;
+}
 .brand-logo {
-  width: 54px;
-  height: 54px;
-  flex: 0 0 54px;
+  width: 60px;
+  height: 60px;
+  flex: 0 0 60px;
   object-fit: contain;
   border-radius: 14px;
   filter: drop-shadow(0 13px 24px rgba(212,175,55,.22));
 }
-.brand strong { white-space: nowrap; text-shadow: 0 1px 18px rgba(212,175,55,.18); }
+.brand-name {
+  display: block;
+  width: 100%;
+  color: var(--bronze);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.1;
+  letter-spacing: .08em;
+  white-space: nowrap;
+  text-shadow: 0 1px 16px rgba(212,175,55,.16);
+}
 .site-search {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -73,6 +93,7 @@ button, .btn, input, select, textarea { min-width: 0; }
   overflow: hidden;
   background: rgba(34,34,34,.72);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+  min-width: 0;
 }
 .site-search input { border: 0; padding: 13px 15px; outline: none; background: transparent; color: var(--text); }
 .site-search input::placeholder, input::placeholder, textarea::placeholder { color: rgba(245,245,245,.48); }
@@ -99,7 +120,7 @@ button, .btn, input, select, textarea { min-width: 0; }
   box-shadow: 0 22px 52px rgba(212,175,55,.22);
   border-color: rgba(212,175,55,.68);
 }
-nav { display: flex; gap: 6px; align-items: center; }
+nav { display: flex; gap: 6px; align-items: center; justify-content: center; min-width: 0; }
 nav a {
   padding: 10px 11px;
   border-radius: var(--radius);
@@ -598,9 +619,10 @@ td { overflow-wrap: anywhere; }
 
 @media (max-width: 620px) {
   .container { width: min(100% - 24px, 1200px); }
-  .topbar-grid { gap: 10px; padding: 10px 0; }
-  .brand strong { font-size: 14px; }
-  .brand-logo { width: 44px; height: 44px; flex-basis: 44px; border-radius: 12px; }
+  .topbar-grid { gap: 10px 12px; padding: 10px 0; }
+  .brand { width: 76px; min-width: 76px; gap: 3px; }
+  .brand-name { font-size: 9px; letter-spacing: .055em; }
+  .brand-logo { width: 48px; height: 48px; flex-basis: 48px; border-radius: 12px; }
   .hero-inner { padding: 58px 0; gap: 28px; }
   h1 { font-size: 40px; }
   .hero h1 { font-size: clamp(29px, 8vw, 38px); }

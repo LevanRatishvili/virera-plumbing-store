@@ -62,7 +62,7 @@ function renderShell() {
   app.innerHTML = `
     <header class="topbar">
       <div class="container topbar-grid">
-        <a class="brand" href="#/" aria-label="AquaPro Gori"><img class="brand-logo" src="${siteLogo}" alt="AquaPro Gori logo"><strong>AquaPro Gori</strong></a>
+        <a class="brand" href="#/" aria-label="AquaPro Gori"><img class="brand-logo" src="${siteLogo}" alt="AquaPro Gori logo"><strong class="brand-name">AquaPro Gori</strong></a>
         <label class="site-search"><input id="globalSearch" placeholder="მოძებნეთ ონკანი, ვენტილი, მილი..." /><button id="globalSearchBtn">ძებნა</button></label>
         <nav>${nav.map(([href, label]) => `<a href="#${href}" data-route="${href}">${label}</a>`).join("")}</nav>
         <div class="header-actions">
