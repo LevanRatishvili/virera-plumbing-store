@@ -1,5 +1,7 @@
 node_modules
 .env
+.env.local
+.render-deploy.env
 .DS_Store
 *.log
 data/*.sqlite-journal

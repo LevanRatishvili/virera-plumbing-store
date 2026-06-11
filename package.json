@@ -10,6 +10,7 @@
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "check": "node --check src/server.js && node --check public/app.js",
+    "deploy:render": "node scripts/trigger-render-deploy.mjs",
     "prisma:validate": "prisma validate"
   },
   "dependencies": {},

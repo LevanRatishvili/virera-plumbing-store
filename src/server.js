@@ -32,6 +32,13 @@ const publicDir = join(__dirname, "..", "public");
 const port = Number(process.env.PORT || 3000);
 const openAiApiKey = process.env.OPENAI_API_KEY || "";
 const openAiModel = process.env.OPENAI_MODEL || "gpt-5-mini";
+const deploymentInfo = {
+  commit: process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || "local",
+  branch: process.env.RENDER_GIT_BRANCH || process.env.GIT_BRANCH || "local",
+  service: process.env.RENDER_SERVICE_NAME || "local",
+  deployedAt: process.env.RENDER_DEPLOYED_AT || "",
+  environment: process.env.NODE_ENV || "development"
+};
 
 initDatabase();
 
@@ -55,6 +62,7 @@ createServer(async (req, res) => {
 
 async function handleApi(req, res, url) {
   const body = ["POST", "PATCH"].includes(req.method) ? await readJson(req) : {};
+  if (req.method === "GET" && url.pathname === "/api/deployment") return sendJson(res, 200, deploymentInfo);
   if (req.method === "GET" && url.pathname === "/api/config") return sendJson(res, 200, storeConfig);
   if (req.method === "GET" && url.pathname === "/api/admin/products") return sendJson(res, 200, adminProducts(Object.fromEntries(url.searchParams)));
   if (req.method === "POST" && url.pathname === "/api/admin/products") return adminCreateProductRoute(res, body);

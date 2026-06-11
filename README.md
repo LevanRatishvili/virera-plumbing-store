@@ -143,6 +143,49 @@ The included `render.yaml` also defines a persistent disk mounted at:
 
 This keeps `store.sqlite` persistent after deploys. If you do not use a persistent disk, Render's filesystem may reset data between deploys.
 
+### Automatic Deploys
+
+Render's GitHub Auto-Deploy should stay enabled for the service, but this repository also includes a fallback GitHub Actions workflow:
+
+```text
+.github/workflows/render-deploy.yml
+```
+
+On every push to `main`, GitHub Actions calls the Render Deploy Hook stored in this GitHub secret:
+
+```text
+RENDER_DEPLOY_HOOK_URL
+```
+
+After adding or rotating the secret, run the `Trigger Render Deploy` workflow manually from GitHub Actions once to verify the connection without creating another commit.
+
+Do not commit the deploy hook URL. Store it only as a GitHub Actions secret, a shell environment variable, or a local ignored file named:
+
+```text
+.render-deploy.env
+```
+
+Example local file:
+
+```text
+RENDER_DEPLOY_HOOK_URL=https://api.render.com/deploy/...
+```
+
+Local fallback command after a successful push to `main`:
+
+```bash
+npm run deploy:render
+```
+
+Deployment verification:
+
+```bash
+git ls-remote origin refs/heads/main
+curl https://virera.live/api/deployment
+```
+
+The deployment endpoint reports Render's `RENDER_GIT_COMMIT` when Render provides it, so production can be compared with GitHub `main`.
+
 ## Cloudflare DNS For virera.live
 
 After Render creates the service, add the custom domains in Render:
