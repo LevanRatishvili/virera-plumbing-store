@@ -36,6 +36,7 @@ function route() {
 
 async function init() {
   renderShell();
+  bindDelegatedAdminActions();
   await loadData();
   render();
   window.addEventListener("hashchange", () => {
@@ -320,6 +321,41 @@ function closeTransientUi() {
   updateBodyLock();
 }
 
+function bindDelegatedAdminActions() {
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    if (target.closest("#addProductBtn")) {
+      event.preventDefault();
+      openProductModal();
+      return;
+    }
+    if (target.closest("#openImportBtn")) {
+      event.preventDefault();
+      openImportModal();
+      return;
+    }
+    if (target.closest("[data-close-modal]")) {
+      event.preventDefault();
+      closeModals();
+      return;
+    }
+    if (target.closest("#runImportBtn")) {
+      event.preventDefault();
+      submitImportRows();
+    }
+  });
+
+  document.addEventListener("change", (event) => {
+    const target = event.target;
+    if (target?.matches?.("#csvImportFile")) handleImportFileChange(target);
+  });
+
+  document.addEventListener("submit", (event) => {
+    if (event.target?.matches?.("#productForm")) submitProductForm(event);
+  });
+}
+
 function bindOnce(selector, eventName, handler) {
   const element = document.querySelector(selector);
   const key = `bound${eventName}`;
@@ -586,9 +622,35 @@ function openImportModal() {
   document.querySelector("#importModal").classList.add("open");
   updateBodyLock();
 }
+async function handleImportFileChange(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  const text = await file.text();
+  state.importRows = parseCsv(text);
+  const errors = validateImportRows(state.importRows);
+  renderImportPreview(state.importRows);
+  renderImportValidation(errors);
+  document.querySelector("#runImportBtn").disabled = state.importRows.length === 0;
+}
+async function submitImportRows() {
+  const button = document.querySelector("#runImportBtn");
+  if (!button || button.disabled) return;
+  button.disabled = true;
+  try {
+    const result = await api("/api/admin/products/import", { method: "POST", body: { rows: state.importRows } });
+    state.importResult = result;
+    document.querySelector("#importResult").innerHTML = `<div class="success">áƒ¨áƒ”áƒ“áƒ”áƒ’áƒ˜: áƒ¨áƒ”áƒ¥áƒ›áƒœáƒ˜áƒšáƒ˜ ${result.created}, áƒ’áƒáƒœáƒáƒ®áƒšáƒ”áƒ‘áƒ£áƒšáƒ˜ ${result.updated}, áƒ’áƒáƒ›áƒáƒ¢áƒáƒ•áƒ”áƒ‘áƒ£áƒšáƒ˜ ${result.skipped}</div>${result.errors?.length ? table(["Row", "SKU", "áƒ¨áƒ”áƒªáƒ“áƒáƒ›áƒ"], result.errors.slice(0, 30).map((e) => [e.row, e.sku, e.message])) : ""}`;
+    await loadData();
+    await loadAdmin();
+  } catch (error) {
+    document.querySelector("#importResult").innerHTML = `<div class="error">${error.message}</div>`;
+  } finally {
+    button.disabled = false;
+  }
+}
 async function submitProductForm(event) {
   event.preventDefault();
-  const form = event.currentTarget;
+  const form = event.target;
   const payload = Object.fromEntries(new FormData(form));
   const id = payload.id;
   delete payload.id;
@@ -659,24 +721,6 @@ function inventoryManagementTable(products) {
 function bindAdminShellActions() {
   bindOnce("#adminProductApply", "click", refreshAdminProducts);
   bindOnce("#adminProductQ", "keydown", (event) => { if (event.key === "Enter") refreshAdminProducts(); });
-  bindOnce("#addProductBtn", "click", () => openProductModal());
-  bindOnce("#openImportBtn", "click", openImportModal);
-  document.querySelectorAll("[data-close-modal]").forEach((button) => {
-    if (button.dataset.boundClick) return;
-    button.addEventListener("click", closeModals);
-    button.dataset.boundClick = "1";
-  });
-  bindOnce("#productForm", "submit", submitProductForm);
-  bindOnce("#csvImportFile", "change", async (event) => {
-    const file = event.currentTarget.files?.[0];
-    if (!file) return;
-    const text = await file.text();
-    state.importRows = parseCsv(text);
-    const errors = validateImportRows(state.importRows);
-    renderImportPreview(state.importRows);
-    renderImportValidation(errors);
-    document.querySelector("#runImportBtn").disabled = state.importRows.length === 0;
-  });
   bindOnce("#runImportBtn", "click", async () => {
     const button = document.querySelector("#runImportBtn");
     button.disabled = true;
