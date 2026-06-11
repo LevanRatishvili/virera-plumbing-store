@@ -123,6 +123,7 @@ function seed() {
     ["Heating systems", "heating-systems", "Radiators, underfloor heating, manifolds and controls.", "/assets/plumb-supplies.png"],
     ["Drainage systems", "drainage-systems", "Traps, drains, linear drains, siphons and sewer components.", "/assets/plumb-supplies.png"],
     ["Installation accessories", "installation-accessories", "Sealants, tapes, mounting kits and consumables.", "/assets/plumb-supplies.png"],
+    ["Sets", "sets", "Ready product sets for coordinated bathroom and installation choices.", "/assets/categories/sets.png"],
     ["Tools", "tools", "Professional tools for installers and renovation teams.", "/assets/plumb-supplies.png"]
   ];
   const insertCategory = db.prepare("INSERT INTO categories (title, slug, description, imageUrl) VALUES (?, ?, ?, ?)");
@@ -156,6 +157,23 @@ function seed() {
 }
 
 function localizeStoreData() {
+  const categoryImages = {
+    "bathtubs": "/assets/categories/bathtubs.png",
+    "bathroom-furniture": "/assets/categories/bathroom-furniture.png",
+    "heating-systems": "/assets/categories/heating-systems.png",
+    "drainage-systems": "/assets/categories/drainage-systems.png",
+    "valves": "/assets/categories/valves.png",
+    "sets": "/assets/categories/sets.png",
+    "pipes-fittings": "/assets/categories/pipes-fittings.png",
+    "sinks": "/assets/categories/sinks.png",
+    "faucets-mixers": "/assets/categories/faucets-mixers.png",
+    "installation-accessories": "/assets/categories/installation-accessories.png",
+    "pumps": "/assets/categories/pumps.png",
+    "toilets": "/assets/categories/toilets.png",
+    "showers": "/assets/categories/showers.png",
+    "water-heaters": "/assets/categories/water-heaters.png",
+    "tools": "/assets/categories/tools.png"
+  };
   const categories = [
     ["faucets-mixers", "ონკანები და მიქსერები", "პრემიუმ აბაზანისა და სამზარეულოს ონკანები, მიქსერები და თერმოსტატული მართვა."],
     ["showers", "შხაპის სისტემები", "წვიმის შხაპები, შხაპის კომპლექტები, ჩამალული სისტემები და აქსესუარები."],
@@ -172,8 +190,22 @@ function localizeStoreData() {
     ["installation-accessories", "სამონტაჟო აქსესუარები", "სილიკონები, ლენტები, სამაგრი კომპლექტები და სახარჯი მასალები."],
     ["tools", "ხელსაწყოები", "პროფესიონალური ხელსაწყოები მემონტაჟეებისა და სარემონტო ჯგუფებისთვის."]
   ];
-  const updateCategory = db.prepare("UPDATE categories SET title = ?, description = ? WHERE slug = ?");
-  categories.forEach(([slug, title, description]) => updateCategory.run(title, description, slug));
+  normalizeSetsCategory();
+  const updateCategory = db.prepare("UPDATE categories SET title = ?, description = ?, imageUrl = ? WHERE slug = ?");
+  categories.forEach(([slug, title, description]) => updateCategory.run(title, description, categoryImages[slug] || "/assets/plumb-supplies.png", slug));
+  db.prepare(`
+    INSERT INTO categories (title, slug, description, imageUrl)
+    VALUES (?, ?, ?, ?)
+    ON CONFLICT(slug) DO UPDATE SET
+      title = excluded.title,
+      description = excluded.description,
+      imageUrl = excluded.imageUrl
+  `).run(
+    "\u10d9\u10dd\u10db\u10de\u10da\u10d4\u10e5\u10e2\u10d4\u10d1\u10d8",
+    "sets",
+    "\u10db\u10d6\u10d0 \u10d9\u10dd\u10db\u10de\u10da\u10d4\u10e5\u10e2\u10d4\u10d1\u10d8 \u10d0\u10d1\u10d0\u10d6\u10d0\u10dc\u10d8\u10e1, \u10e8\u10ee\u10d0\u10de\u10d8\u10e1\u10d0 \u10d3\u10d0 \u10db\u10dd\u10dc\u10e2\u10d0\u10df\u10d8\u10e1 \u10d7\u10d0\u10dc\u10db\u10d8\u10db\u10d3\u10d4\u10d5\u10e0\u10e3\u10da\u10d8 \u10d0\u10e0\u10e9\u10d4\u10d5\u10d8\u10e1\u10d7\u10d5\u10d8\u10e1.",
+    categoryImages.sets
+  );
 
   const products = [
     ["AQ-MIX-100", "Aurelia ფოლადის პრემიუმ ხელსაბანის მიქსერი", "დახვეწილი ერთბერკეტიანი მიქსერი თანამედროვე აბაზანისთვის, რბილი მოძრაობით და წყლის დამზოგავი აერატორით.", ["დავარცხნილი ფოლადი", "მქრქალი შავი"], { მასალა: "ლატუნი", დასრულება: "დავარცხნილი ფოლადი", შეერთება: "G 3/8", ხარჯი: "5.7 ლ/წთ" }],
@@ -194,6 +226,16 @@ function localizeStoreData() {
   ];
   const updateProduct = db.prepare("UPDATE products SET title = ?, description = ?, variants = ?, specs = ? WHERE sku = ?");
   products.forEach(([sku, title, description, variants, specs]) => updateProduct.run(title, description, JSON.stringify(variants), JSON.stringify(specs), sku));
+}
+
+function normalizeSetsCategory() {
+  const badSets = db.prepare("SELECT id FROM categories WHERE title = ? AND slug <> ?").get("\u10d9\u10dd\u10db\u10de\u10da\u10d4\u10e5\u10e2\u10d4\u10d1\u10d8", "sets");
+  const goodSets = db.prepare("SELECT id FROM categories WHERE slug = ?").get("sets");
+  if (badSets && !goodSets) db.prepare("UPDATE categories SET slug = ? WHERE id = ?").run("sets", badSets.id);
+  if (badSets && goodSets) {
+    db.prepare("UPDATE products SET categoryId = ? WHERE categoryId = ?").run(goodSets.id, badSets.id);
+    db.prepare("DELETE FROM categories WHERE id = ?").run(badSets.id);
+  }
 }
 
 const parseProduct = (p) => ({
@@ -233,6 +275,7 @@ function ensureCategory(value) {
     "heating-systems": "heating-systems",
     "drainage-systems": "drainage-systems",
     "installation-accessories": "installation-accessories",
+    "sets": "sets",
     "tools": "tools"
   };
   const slug = aliases[slugify(raw)] || slugify(raw);
