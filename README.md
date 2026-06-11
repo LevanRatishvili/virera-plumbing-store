@@ -194,6 +194,8 @@ curl https://virera.live/api/deployment
 
 The deployment endpoint reports Render's `RENDER_GIT_COMMIT` when Render provides it, so production can be compared with GitHub `main`.
 
+Deployment automation was verified with the GitHub Actions fallback after adding the Render deploy hook secret.
+
 ## Cloudflare DNS For virera.live
 
 After Render creates the service, add the custom domains in Render:
