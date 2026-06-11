@@ -94,6 +94,7 @@ export function initDatabase() {
   const count = db.prepare("SELECT COUNT(*) AS count FROM categories").get().count;
   if (count === 0) seed();
   localizeStoreData();
+  ensurePresentationProducts();
 }
 
 function migrateProductsTable() {
@@ -236,6 +237,83 @@ function normalizeSetsCategory() {
     db.prepare("UPDATE products SET categoryId = ? WHERE categoryId = ?").run(goodSets.id, badSets.id);
     db.prepare("DELETE FROM categories WHERE id = ?").run(badSets.id);
   }
+}
+
+function ensurePresentationProducts() {
+  const catalog = {
+    "bathtubs": { prefix: "BTH", brand: "Roca", base: 980, items: ["თავისუფლად მდგომი აბაზანა", "ჩასაშენებელი აკრილის აბაზანა", "კუთხის აბაზანა", "ოვალური პრემიუმ აბაზანა"] },
+    "bathroom-furniture": { prefix: "FUR", brand: "Ideal Standard", base: 520, items: ["კედლის ტუმბო სარკით", "ორუჯრიანი ავეჯის ნაკრები", "LED სარკის კომპლექტი", "მუხის ტექსტურის თარო"] },
+    "heating-systems": { prefix: "HEA", brand: "Kermi", base: 180, items: ["დიზაინერული რადიატორი", "იატაკქვეშა გათბობის კოლექტორი", "თერმოსტატის ნაკრები", "პანელური რადიატორი"] },
+    "drainage-systems": { prefix: "DRN", brand: "Viega", base: 45, items: ["ხაზოვანი ტრაპი", "სიფონის ნაკრები", "დრენაჟის არხი", "იატაკის ტრაპი"] },
+    "valves": { prefix: "VLV", brand: "Caleffi", base: 18, items: ["ბურთულიანი ვენტილი", "წნევის რედუქტორი", "უკუსარქველი", "კოლექტორის ვენტილი"] },
+    "sets": { prefix: "SET", brand: "VirEra", base: 240, items: ["აბაზანის სრული კომპლექტი", "შხაპის მონტაჟის ნაკრები", "სამზარეულოს წყლის კომპლექტი", "ეკონომიური განახლების პაკეტი"] },
+    "pipes-fittings": { prefix: "PIP", brand: "Aquatherm", base: 9, items: ["PPR მილის შეკვრა", "ლატუნის ფიტინგების ნაკრები", "მუხლის და სამკაპის კომპლექტი", "მრავალშრიანი მილის რულონი"] },
+    "sinks": { prefix: "SNK", brand: "Duravit", base: 160, items: ["ზედაპირზე დასადგამი ნიჟარა", "სამზარეულოს გრანიტის ნიჟარა", "ჩასაშენებელი ხელსაბანი", "ორმაგი სამზარეულოს ნიჟარა"] },
+    "faucets-mixers": { prefix: "MIX", brand: "Grohe", base: 120, items: ["ხელსაბანის მიქსერი", "სამზარეულოს ონკანი", "შხაპის მიქსერი", "თერმოსტატული მიქსერი"] },
+    "installation-accessories": { prefix: "ACC", brand: "Soudal", base: 8, items: ["ჰერმეტიკის ნაკრები", "სამაგრების კომპლექტი", "ტეფლონის ლენტი", "მონტაჟის სწრაფი პაკეტი"] },
+    "pumps": { prefix: "PMP", brand: "Grundfos", base: 220, items: ["ცირკულაციის ტუმბო", "დრენაჟის ტუმბო", "წნევის გამაძლიერებელი", "წყალქვეშა ტუმბო"] },
+    "toilets": { prefix: "WCL", brand: "Villeroy", base: 210, items: ["კედლის უნიტაზი", "იატაკის უნიტაზი", "ჩამალული ავზის ნაკრები", "რბილად დახურვადი დასაჯდომი"] },
+    "showers": { prefix: "SHW", brand: "Hansgrohe", base: 190, items: ["წვიმის შხაპის სისტემა", "ხელის შხაპის ნაკრები", "ჩამალული შხაპის მიქსერი", "შხაპის სვეტი"] },
+    "water-heaters": { prefix: "WHT", brand: "Ariston", base: 260, items: ["ელექტრო გამაცხელებელი 50ლ", "ელექტრო გამაცხელებელი 80ლ", "გაზის გამაცხელებელი", "კომპაქტური გამაცხელებელი"] },
+    "tools": { prefix: "TLS", brand: "Rems", base: 35, items: ["პრეს ხელსაწყო", "მილის საჭრელი", "ფიტინგის გასაღები", "მონტაჟის ხელსაწყოების ჩანთა"] }
+  };
+
+  const categories = db.prepare("SELECT id, slug, title, imageUrl FROM categories").all();
+  const existingProduct = db.prepare("SELECT id FROM products WHERE sku = ?");
+  const countProducts = db.prepare("SELECT COUNT(*) AS count FROM products WHERE categoryId = ? AND status = 'active'");
+  const insertProduct = db.prepare(`
+    INSERT INTO products (
+      sku, title, brand, categoryId, description, price, oldPrice, rating, reviews, stock,
+      imageUrl, gallery, variants, specs, tags, isNew, isBestSeller, status, createdAt, updatedAt
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+  `);
+
+  categories.forEach((category) => {
+    const group = catalog[category.slug];
+    if (!group) return;
+
+    let currentCount = countProducts.get(category.id).count;
+    const imageUrl = category.imageUrl || `/assets/categories/${category.slug}.png`;
+
+    group.items.forEach((title, index) => {
+      if (currentCount >= 4) return;
+
+      const sku = `VR-${group.prefix}-${String(index + 1).padStart(2, "0")}`;
+      if (existingProduct.get(sku)) return;
+
+      const step = Math.max(7, Math.round(group.base * 0.28));
+      const price = group.base + index * step;
+      const oldPrice = index === 1 || index === 3 ? Math.round(price * 1.15) : null;
+      const stock = [12, 8, 21, 6][index] || 10;
+      const description = `${category.title} კატეგორიის დემო პროდუქტი გორის შოურუმისთვის. შესაფერისია ადგილობრივი შეკვეთისა და ოპერატორთან სწრაფი შეთანხმებისთვის.`;
+      const gallery = JSON.stringify([imageUrl, imageUrl]);
+      const variants = JSON.stringify(["სტანდარტული", "პრემიუმ"]);
+      const specs = JSON.stringify({ "მიწოდება": "გორი", "კატეგორია": category.title, "სტატუსი": "შეკვეთით/მარაგში" });
+      const tags = JSON.stringify(["demo", category.slug]);
+
+      insertProduct.run(
+        sku,
+        title,
+        group.brand,
+        category.id,
+        description,
+        price,
+        oldPrice,
+        4.6 + (index % 3) * 0.1,
+        18 + index * 11,
+        stock,
+        imageUrl,
+        gallery,
+        variants,
+        specs,
+        tags,
+        index === 2 ? 1 : 0,
+        index === 0 ? 1 : 0
+      );
+      currentCount += 1;
+    });
+  });
 }
 
 const parseProduct = (p) => ({
