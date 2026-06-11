@@ -312,6 +312,7 @@ function closeCatalogFilters() {
 }
 function closeTransientUi() {
   document.querySelector("nav")?.classList.remove("open");
+  hideOperatorForm();
   document.querySelector("#assistant")?.classList.remove("open");
   document.querySelector("#catalogFilters")?.classList.remove("open");
   document.querySelectorAll(".modal.open").forEach((modal) => modal.classList.remove("open"));
@@ -518,7 +519,7 @@ function renderAdminProductsTable(products) {
   const target = document.querySelector("#adminProductsTable");
   if (!target) return;
   if (!products.length) { target.innerHTML = `<div class="empty">პროდუქტი ვერ მოიძებნა</div>`; return; }
-  target.innerHTML = `<div class="table-wrap"><table><thead><tr><th>SKU</th><th>პროდუქტი</th><th>კატეგორია</th><th>ფასი</th><th>მარაგი</th><th>სტატუსი</th><th>ქმედება</th></tr></thead><tbody>${products.map((p) => `<tr><td>${escapeHtml(p.sku)}</td><td><b>${escapeHtml(p.name)}</b><br><small>${escapeHtml(p.brand)}</small></td><td>${escapeHtml(p.categoryTitle)}</td><td>${money(p.price)}${p.salePrice ? `<br><small>შედარების ფასი ${money(p.salePrice)}</small>` : ""}</td><td>${p.stock}</td><td>${translateProductStatus(p.status)}</td><td><div class="row-actions"><button class="mini-btn" data-edit-product="${p.id}">რედაქტირება</button><button class="mini-btn danger" data-delete-product="${p.id}">წაშლა</button></div></td></tr>`).join("")}</tbody></table></div>`;
+  target.innerHTML = `<div class="table-wrap admin-products-wrap"><table class="admin-products-table"><thead><tr><th>SKU</th><th>პროდუქტი</th><th>კატეგორია</th><th>ფასი</th><th>მარაგი</th><th>სტატუსი</th><th>ქმედება</th></tr></thead><tbody>${products.map((p) => `<tr><td data-label="SKU">${escapeHtml(p.sku)}</td><td data-label="პროდუქტი"><b>${escapeHtml(p.name)}</b><br><small>${escapeHtml(p.brand)}</small></td><td data-label="კატეგორია">${escapeHtml(p.categoryTitle)}</td><td data-label="ფასი">${money(p.price)}${p.salePrice ? `<br><small>შედარების ფასი ${money(p.salePrice)}</small>` : ""}</td><td data-label="მარაგი">${p.stock}</td><td data-label="სტატუსი">${translateProductStatus(p.status)}</td><td data-label="ქმედება"><div class="row-actions"><button class="mini-btn" data-edit-product="${p.id}">რედაქტირება</button><button class="mini-btn danger" data-delete-product="${p.id}">წაშლა</button></div></td></tr>`).join("")}</tbody></table></div>`;
 }
 function translateProductStatus(status) { return ({ active: "აქტიური", draft: "დრაფტი", hidden: "დამალული", archived: "არქივი" }[status] || status || "აქტიური"); }
 function adminProductFilters() {
@@ -725,9 +726,11 @@ function renderAssistant() {
     existing.classList.remove("open");
     return;
   }
-  document.querySelector("#assistantMount").innerHTML = `<div class="assistant" id="assistant"><div class="assistant-panel"><header><b>გორის შოურუმის ასისტენტი</b><button id="closeAssistant">×</button></header><div class="assistant-log" id="assistantLog"><div class="bubble">მოგესალმებით AquaPro Gori-ში. მითხარით რა სივრცეს აწყობთ, რა ფერი ან ბიუჯეტი გაქვთ და დაგეხმარებით სწორ პროდუქტის შერჩევაში. საჭიროებისას ოპერატორი დაგირეკავთ.</div></div><div class="quick"><button data-prompt="მირჩიე პრემიუმ ონკანი">ონკანი</button><button data-prompt="მჭირდება მილები და ფიტინგები">მონტაჟი</button><button data-prompt="მიწოდება გორში">მიწოდება</button><button data-prompt="ოპერატორი მჭირდება">ოპერატორი</button></div><form id="assistantForm"><input name="message" placeholder="დასვით კითხვა პროდუქტზე"><button>გაგზავნა</button></form><form class="operator-form" id="operatorForm"><input name="name" placeholder="სახელი" required><input name="phone" placeholder="ტელეფონი" required><input name="topic" placeholder="თემა" required><textarea name="message" placeholder="რა გჭირდებათ?" required></textarea><button>ოპერატორთან დაკავშირება</button><div id="operatorStatus"></div></form></div><button class="assistant-toggle" id="openAssistant">AI</button></div>`;
+  document.querySelector("#assistantMount").innerHTML = `<div class="assistant" id="assistant"><div class="assistant-panel"><header><b>გორის შოურუმის ასისტენტი</b><button id="closeAssistant">×</button></header><div class="assistant-log" id="assistantLog"><div class="bubble">მოგესალმებით AquaPro Gori-ში. მითხარით რა სივრცეს აწყობთ, რა ფერი ან ბიუჯეტი გაქვთ და დაგეხმარებით სწორ პროდუქტის შერჩევაში. საჭიროებისას ოპერატორი დაგირეკავთ.</div></div><div class="quick"><button data-prompt="მირჩიე პრემიუმ ონკანი">ონკანი</button><button data-prompt="მჭირდება მილები და ფიტინგები">მონტაჟი</button><button data-prompt="მიწოდება გორში">მიწოდება</button><button data-prompt="ოპერატორი მჭირდება">ოპერატორი</button></div><form id="assistantForm"><input name="message" placeholder="დასვით კითხვა პროდუქტზე"><button>გაგზავნა</button></form><form class="operator-form" id="operatorForm"><div class="operator-form-head"><b>ოპერატორთან დაკავშირება</b><button type="button" id="backToChat">უკან დაბრუნება</button></div><input name="name" placeholder="სახელი" required><input name="phone" placeholder="ტელეფონი" required><input name="topic" placeholder="თემა" required><textarea name="message" placeholder="რა გჭირდებათ?" required></textarea><button>ოპერატორთან დაკავშირება</button><button type="button" class="btn ghost" id="closeOperator">დახურვა</button><div id="operatorStatus"></div></form></div><button class="assistant-toggle" id="openAssistant">AI</button></div>`;
   document.querySelector("#openAssistant").addEventListener("click", openAssistant);
-  document.querySelector("#closeAssistant").addEventListener("click", () => document.querySelector("#assistant").classList.remove("open"));
+  document.querySelector("#closeAssistant").addEventListener("click", closeAssistant);
+  document.querySelector("#backToChat").addEventListener("click", hideOperatorForm);
+  document.querySelector("#closeOperator").addEventListener("click", closeAssistant);
   document.querySelectorAll("[data-prompt]").forEach((b) => b.addEventListener("click", () => { document.querySelector("#assistantForm input").value = b.dataset.prompt; document.querySelector("#assistantForm").requestSubmit(); }));
   document.querySelector("#assistantForm").addEventListener("submit", assistantSubmit);
   document.querySelector("#operatorForm").addEventListener("submit", operatorSubmit);
@@ -762,6 +765,19 @@ function openAssistant() {
   document.querySelector("nav")?.classList.remove("open");
   document.querySelector("#assistant")?.classList.add("open");
 }
+function closeAssistant() {
+  hideOperatorForm();
+  document.querySelector("#assistant")?.classList.remove("open");
+}
+function showOperatorForm() {
+  document.querySelector("#operatorForm")?.classList.add("show");
+  document.querySelector("#assistantLog")?.scrollTo({ top: document.querySelector("#assistantLog").scrollHeight, behavior: "smooth" });
+}
+function hideOperatorForm() {
+  document.querySelector("#operatorForm")?.classList.remove("show");
+  const status = document.querySelector("#operatorStatus");
+  if (status) status.innerHTML = "";
+}
 async function assistantSubmit(event) {
   event.preventDefault();
   const input = event.currentTarget.message;
@@ -772,7 +788,8 @@ async function assistantSubmit(event) {
   const result = await api("/api/chat", { method: "POST", body: { message, sessionId: localStorage.getItem("storeChat") || "" } });
   localStorage.setItem("storeChat", result.sessionId);
   appendAssistant(result.reply, "bot");
-  document.querySelector("#operatorForm").classList.toggle("show", result.needsOperator);
+  if (result.needsOperator) showOperatorForm();
+  else hideOperatorForm();
 }
 async function operatorSubmit(event) {
   event.preventDefault();
