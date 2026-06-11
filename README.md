@@ -177,6 +177,14 @@ Local fallback command after a successful push to `main`:
 npm run deploy:render
 ```
 
+Codex local push-and-deploy command:
+
+```bash
+npm run push:main
+```
+
+Use this command after completed local work when `RENDER_DEPLOY_HOOK_URL` is available in the environment or `.render-deploy.env`. It pushes `main` first and triggers the Render Deploy Hook only after that push succeeds.
+
 Deployment verification:
 
 ```bash
