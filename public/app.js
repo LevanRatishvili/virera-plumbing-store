@@ -38,8 +38,12 @@ async function init() {
   await loadData();
   render();
   window.addEventListener("hashchange", () => {
+    closeTransientUi();
     state.route = route();
     render();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeTransientUi();
   });
 }
 
@@ -78,10 +82,15 @@ function renderShell() {
   document.querySelector("#globalSearch").addEventListener("keydown", (event) => {
     if (event.key === "Enter") document.querySelector("#globalSearchBtn").click();
   });
-  document.querySelector("#mobileMenu").addEventListener("click", () => document.querySelector("nav").classList.toggle("open"));
+  document.querySelector("#mobileMenu").addEventListener("click", () => {
+    closeCatalogFilters();
+    document.querySelector("#assistant")?.classList.remove("open");
+    document.querySelector("nav").classList.toggle("open");
+  });
 }
 
 function render() {
+  closeTransientUi();
   document.querySelectorAll("[data-route]").forEach((a) => a.classList.toggle("active", a.dataset.route === state.route));
   const page = document.querySelector("#page");
   if (state.route.startsWith("/product/")) page.innerHTML = productPage(Number(state.route.split("/").pop()));
@@ -197,9 +206,10 @@ function searchPage() {
 function catalogLayout(products, initialQ = "") {
   const brands = state.brands.map((b) => b.brand);
   const q = initialQ || state.filters.q;
-  return `<section class="section"><div class="container">
+  return `<section class="section catalog-section"><div class="container">
     <div class="catalog-mobile-bar"><button class="btn" id="openFilters">ფილტრები</button><span id="mobileResultCount">${products.length} პროდუქტი</span></div>
     <div class="catalog">
+      <button class="filter-scrim" id="filterScrim" aria-label="Close filters"></button>
       <aside class="filters" id="catalogFilters">
         <div class="filter-head"><h3>ფილტრები</h3><button id="closeFilters">×</button></div>
         <input id="filterQ" placeholder="სახელი, SKU ან აღწერა" value="${escapeHtml(q)}" />
@@ -284,6 +294,30 @@ function adminPage() {
   return `<section class="page-hero small"><img src="/assets/plumb-supplies.png" alt="ადმინი"><div class="container"><h1>ადმინ პანელი</h1><p>პროდუქტები, შეკვეთის მოთხოვნები, კონტაქტები, მარაგი და ანალიტიკა.</p></div></section><section class="section"><div class="container"><div id="adminStats" class="admin-stats"></div><div id="adminAnalytics" class="admin-analytics"></div><div class="panel product-management"><div class="admin-panel-head"><div><h2>პროდუქტების მართვა</h2><p>ძიება, ფილტრაცია, დამატება, რედაქტირება, წაშლა და CSV import 2000+ პროდუქტისთვის.</p></div><div class="buttons"><button class="btn" id="addProductBtn">პროდუქტის დამატება</button><button class="btn ghost" id="openImportBtn">CSV იმპორტი</button></div></div><div class="admin-product-filters"><input id="adminProductQ" placeholder="SKU ან სახელით ძებნა"><select id="adminCategoryFilter"><option value="">ყველა კატეგორია</option></select><select id="adminBrandFilter"><option value="">ყველა ბრენდი</option></select><select id="adminStatusFilter"><option value="">ყველა სტატუსი</option><option value="active">აქტიური</option><option value="draft">დრაფტი</option><option value="hidden">დამალული</option><option value="archived">არქივი</option></select><button class="mini-btn" id="adminProductApply">ფილტრაცია</button></div><div id="adminProductsTable"></div></div><div class="admin-grid"><div class="panel"><h2>შეკვეთის მოთხოვნები</h2><div id="ordersTable"></div></div><div class="panel"><h2>მარაგის სწრაფი მართვა</h2><div id="inventoryTable"></div></div><div class="panel"><h2>კონტაქტები</h2><div id="customersTable"></div></div><div class="panel"><h2>შეტყობინებები</h2><div id="messagesTable"></div></div></div>${productModal()}${importModal()}</div></section>`;
 }
 
+function updateBodyLock() {
+  const hasOpenFilters = Boolean(document.querySelector(".filters.open"));
+  const hasBlockingUi = hasOpenFilters || Boolean(document.querySelector(".modal.open"));
+  document.body.classList.toggle("filters-open", hasOpenFilters);
+  document.body.classList.toggle("ui-locked", hasBlockingUi);
+}
+function openCatalogFilters() {
+  document.querySelector("nav")?.classList.remove("open");
+  document.querySelector("#assistant")?.classList.remove("open");
+  document.querySelector("#catalogFilters")?.classList.add("open");
+  updateBodyLock();
+}
+function closeCatalogFilters() {
+  document.querySelector("#catalogFilters")?.classList.remove("open");
+  updateBodyLock();
+}
+function closeTransientUi() {
+  document.querySelector("nav")?.classList.remove("open");
+  document.querySelector("#assistant")?.classList.remove("open");
+  document.querySelector("#catalogFilters")?.classList.remove("open");
+  document.querySelectorAll(".modal.open").forEach((modal) => modal.classList.remove("open"));
+  updateBodyLock();
+}
+
 function bindPage() {
   document.querySelectorAll("[data-add]").forEach((b) => b.addEventListener("click", () => addCart(Number(b.dataset.add), Number(document.querySelector(`#${b.dataset.qtySource}`)?.value || 1))));
   document.querySelectorAll("[data-wish]").forEach((b) => b.addEventListener("click", () => toggleWish(Number(b.dataset.wish))));
@@ -299,8 +333,9 @@ function bindPage() {
   }));
   document.querySelector("#applyFilters")?.addEventListener("click", applyFilters);
   document.querySelector("#resetFilters")?.addEventListener("click", resetFilters);
-  document.querySelector("#openFilters")?.addEventListener("click", () => document.querySelector("#catalogFilters")?.classList.add("open"));
-  document.querySelector("#closeFilters")?.addEventListener("click", () => document.querySelector("#catalogFilters")?.classList.remove("open"));
+  document.querySelector("#openFilters")?.addEventListener("click", openCatalogFilters);
+  document.querySelector("#closeFilters")?.addEventListener("click", closeCatalogFilters);
+  document.querySelector("#filterScrim")?.addEventListener("click", closeCatalogFilters);
   document.querySelector("#checkoutForm")?.addEventListener("submit", checkout);
   document.querySelector("#contactForm")?.addEventListener("submit", contact);
   document.querySelectorAll("[data-open-assistant]").forEach((b) => b.addEventListener("click", openAssistant));
@@ -321,7 +356,7 @@ function applyFilters() {
   document.querySelector("#productGrid").innerHTML = products.map(productCard).join("") || `<div class="empty">ამ ფილტრებით პროდუქტი ვერ მოიძებნა. შეცვალეთ ფასი, ბრენდი ან დაგვიკავშირდით ოპერატორთან.</div>`;
   document.querySelector("#resultCount").textContent = `${products.length} პროდუქტი`;
   document.querySelector("#mobileResultCount").textContent = `${products.length} პროდუქტი`;
-  document.querySelector("#catalogFilters")?.classList.remove("open");
+  closeCatalogFilters();
   bindPage();
 }
 
@@ -375,7 +410,7 @@ function productCard(p) {
 }
 
 function categoryCard(c) {
-  return `<a class="category-card" href="#/shop" data-category="${c.slug}"><img src="${c.imageUrl}" alt="${c.title}"><strong>${c.title}</strong><span>${c.description}</span></a>`;
+  return `<a class="category-card ${state.filters.category === c.slug ? "selected" : ""}" href="#/shop" data-category="${c.slug}"><img src="${c.imageUrl}" alt="${c.title}"><strong>${c.title}</strong><span>${c.description}</span></a>`;
 }
 
 function productSection(title, subtitle, products) {
@@ -519,8 +554,12 @@ function openProductModal(product = null) {
   form.attributes.value = Object.entries(product?.attributes || product?.specs || {}).map(([key, value]) => `${key}:${value}`).join("|");
   form.status.value = product?.status || "active";
   modal.classList.add("open");
+  updateBodyLock();
 }
-function closeModals() { document.querySelectorAll(".modal").forEach((modal) => modal.classList.remove("open")); }
+function closeModals() {
+  document.querySelectorAll(".modal").forEach((modal) => modal.classList.remove("open"));
+  updateBodyLock();
+}
 async function submitProductForm(event) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -611,6 +650,7 @@ function bindAdminActions() {
     document.querySelector("#importResult").innerHTML = "";
     document.querySelector("#runImportBtn").disabled = true;
     document.querySelector("#importModal").classList.add("open");
+    updateBodyLock();
   });
   document.querySelectorAll("[data-close-modal]").forEach((button) => {
     if (button.dataset.boundClick) return;
@@ -699,13 +739,17 @@ function renderQuickView() {
     return;
   }
   document.body.insertAdjacentHTML("beforeend", `<div class="modal" id="quickView"><div class="modal-card"><header><h2>სწრაფი ნახვა</h2><button id="closeQuickView">×</button></header><div id="quickViewBody"></div></div></div>`);
-  document.querySelector("#closeQuickView").addEventListener("click", () => document.querySelector("#quickView").classList.remove("open"));
+  document.querySelector("#closeQuickView").addEventListener("click", closeModals);
+  document.querySelector("#quickView").addEventListener("click", (event) => {
+    if (event.target.id === "quickView") closeModals();
+  });
 }
 function openQuickView(id) {
   const product = state.products.find((item) => item.id === id);
   if (!product) return;
   document.querySelector("#quickViewBody").innerHTML = `<div class="quick-view-body"><img src="${product.imageUrl}" alt="${escapeHtml(product.title)}"><div><span class="eyebrow">SKU: ${product.sku}</span><h2>${product.title}</h2><p>${product.brand} · ${product.categoryTitle}</p><div class="price">${priceHtml(product)}</div><div class="stock-badge ${product.stock > 0 ? "ok" : "low"}">${product.stock > 0 ? `${product.stock} მარაგშია` : "არ არის მარაგში"}</div><div class="buttons"><a class="btn" href="#/product/${product.id}">დეტალურად</a><button class="btn ghost" data-add="${product.id}">შეკვეთაში</button><button class="btn ghost" data-wish="${product.id}">♡</button></div></div></div>`;
   document.querySelector("#quickView").classList.add("open");
+  updateBodyLock();
   document.querySelectorAll("#quickView [data-add]").forEach((button) => {
     button.addEventListener("click", () => addCart(Number(button.dataset.add)));
   });
@@ -713,7 +757,11 @@ function openQuickView(id) {
     button.addEventListener("click", () => toggleWish(Number(button.dataset.wish)));
   });
 }
-function openAssistant() { document.querySelector("#assistant")?.classList.add("open"); }
+function openAssistant() {
+  closeCatalogFilters();
+  document.querySelector("nav")?.classList.remove("open");
+  document.querySelector("#assistant")?.classList.add("open");
+}
 async function assistantSubmit(event) {
   event.preventDefault();
   const input = event.currentTarget.message;
@@ -737,7 +785,7 @@ function appendAssistant(text, role) { document.querySelector("#assistantLog").i
 function renderFooter() { document.querySelector("#footer").innerHTML = `<div class="container footer-grid"><div><b>AquaPro Gori</b><p>პრემიუმ სანტექნიკის ონლაინ შოურუმი გორისთვის. აირჩიეთ პროდუქტი, გაგზავნეთ მოთხოვნა და შეკვეთას ტელეფონით დაგიდასტურებთ.</p></div><div>${[...nav.slice(0, 6), ["/faq", "FAQ"], ["/about", "ჩვენ შესახებ"]].map(([h, l]) => `<a href="#${h}">${l}</a>`).join("")}</div><div><p>${state.config.phone}<br>${state.config.email}<br>${state.config.address}</p><a class="btn ghost" href="tel:+995599123456">დარეკვა</a></div></div>`; }
 function enhanceMedia() {
   document.querySelectorAll("img").forEach((img, i) => { img.loading = i < 2 ? "eager" : "lazy"; img.decoding = "async"; });
-  const targets = document.querySelectorAll(".section, .promo article, .product-card, .category-card");
+  const targets = document.querySelectorAll(".section:not(.catalog-section), .promo article, .product-card, .category-card");
   if (!("IntersectionObserver" in window)) {
     targets.forEach((element) => element.classList.add("visible"));
     return;
