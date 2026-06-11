@@ -111,6 +111,7 @@ function render() {
     "/delivery": deliveryPage,
     "/admin": adminPage
   }[state.route] || homePage)();
+  mountPageModals();
   renderAssistant();
   renderQuickView();
   renderFooter();
@@ -118,6 +119,11 @@ function render() {
   updateCounts();
   enhanceMedia();
   scrollTo({ top: 0, behavior: "instant" });
+}
+
+function mountPageModals() {
+  document.querySelectorAll("body > #productModal, body > #importModal").forEach((modal) => modal.remove());
+  document.querySelectorAll("#page #productModal, #page #importModal").forEach((modal) => document.body.appendChild(modal));
 }
 
 function homePage() {
