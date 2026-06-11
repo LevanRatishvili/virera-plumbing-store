@@ -1,4 +1,5 @@
 const money = (value) => `${Number(value).toFixed(0)} ლარი`;
+const siteLogo = "/assets/site-logo.png?v=logo-1";
 const state = {
   config: null,
   categories: [],
@@ -61,7 +62,7 @@ function renderShell() {
   app.innerHTML = `
     <header class="topbar">
       <div class="container topbar-grid">
-        <a class="brand" href="#/"><span>AP</span><strong>AquaPro Gori</strong></a>
+        <a class="brand" href="#/" aria-label="AquaPro Gori"><img class="brand-logo" src="${siteLogo}" alt="AquaPro Gori logo"><strong>AquaPro Gori</strong></a>
         <label class="site-search"><input id="globalSearch" placeholder="მოძებნეთ ონკანი, ვენტილი, მილი..." /><button id="globalSearchBtn">ძებნა</button></label>
         <nav>${nav.map(([href, label]) => `<a href="#${href}" data-route="${href}">${label}</a>`).join("")}</nav>
         <div class="header-actions">
@@ -799,7 +800,7 @@ async function operatorSubmit(event) {
   catch (error) { status.innerHTML = `<div class="error">${error.message}</div>`; }
 }
 function appendAssistant(text, role) { document.querySelector("#assistantLog").insertAdjacentHTML("beforeend", `<div class="bubble ${role}">${escapeHtml(text)}</div>`); }
-function renderFooter() { document.querySelector("#footer").innerHTML = `<div class="container footer-grid"><div><b>AquaPro Gori</b><p>პრემიუმ სანტექნიკის ონლაინ შოურუმი გორისთვის. აირჩიეთ პროდუქტი, გაგზავნეთ მოთხოვნა და შეკვეთას ტელეფონით დაგიდასტურებთ.</p></div><div>${[...nav.slice(0, 6), ["/faq", "FAQ"], ["/about", "ჩვენ შესახებ"]].map(([h, l]) => `<a href="#${h}">${l}</a>`).join("")}</div><div><p>${state.config.phone}<br>${state.config.email}<br>${state.config.address}</p><a class="btn ghost" href="tel:+995599123456">დარეკვა</a></div></div>`; }
+function renderFooter() { document.querySelector("#footer").innerHTML = `<div class="container footer-grid"><div><a class="footer-brand" href="#/" aria-label="AquaPro Gori"><img class="footer-logo" src="${siteLogo}" alt="AquaPro Gori logo"><b>AquaPro Gori</b></a><p>პრემიუმ სანტექნიკის ონლაინ შოურუმი გორისთვის. აირჩიეთ პროდუქტი, გაგზავნეთ მოთხოვნა და შეკვეთას ტელეფონით დაგიდასტურებთ.</p></div><div>${[...nav.slice(0, 6), ["/faq", "FAQ"], ["/about", "ჩვენ შესახებ"]].map(([h, l]) => `<a href="#${h}">${l}</a>`).join("")}</div><div><p>${state.config.phone}<br>${state.config.email}<br>${state.config.address}</p><a class="btn ghost" href="tel:+995599123456">დარეკვა</a></div></div>`; }
 function enhanceMedia() {
   document.querySelectorAll("img").forEach((img, i) => { img.loading = i < 2 ? "eager" : "lazy"; img.decoding = "async"; });
   const targets = document.querySelectorAll(".section:not(.catalog-section), .promo article, .product-card, .category-card");
