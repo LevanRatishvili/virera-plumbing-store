@@ -412,7 +412,7 @@ function productCard(p) {
 }
 
 function categoryCard(c) {
-  return `<a class="category-card ${state.filters.category === c.slug ? "selected" : ""}" href="#/shop" data-category="${c.slug}"><img src="${c.imageUrl}" alt="${c.title}"><strong>${c.title}</strong><span>${c.description}</span></a>`;
+  return `<a class="category-card ${state.filters.category === c.slug ? "selected" : ""}" href="#/shop" data-category="${c.slug}"><img src="${c.imageUrl}" alt="${c.title}" loading="eager" decoding="async"><strong>${c.title}</strong><span>${c.description}</span></a>`;
 }
 
 function productSection(title, subtitle, products) {
@@ -802,7 +802,10 @@ async function operatorSubmit(event) {
 function appendAssistant(text, role) { document.querySelector("#assistantLog").insertAdjacentHTML("beforeend", `<div class="bubble ${role}">${escapeHtml(text)}</div>`); }
 function renderFooter() { document.querySelector("#footer").innerHTML = `<div class="container footer-grid"><div><a class="footer-brand" href="#/" aria-label="AquaPro Gori"><img class="footer-logo" src="${siteLogo}" alt="AquaPro Gori logo"><b>AquaPro Gori</b></a><p>პრემიუმ სანტექნიკის ონლაინ შოურუმი გორისთვის. აირჩიეთ პროდუქტი, გაგზავნეთ მოთხოვნა და შეკვეთას ტელეფონით დაგიდასტურებთ.</p></div><div>${[...nav.slice(0, 6), ["/faq", "FAQ"], ["/about", "ჩვენ შესახებ"]].map(([h, l]) => `<a href="#${h}">${l}</a>`).join("")}</div><div><p>${state.config.phone}<br>${state.config.email}<br>${state.config.address}</p><a class="btn ghost" href="tel:+995599123456">დარეკვა</a></div></div>`; }
 function enhanceMedia() {
-  document.querySelectorAll("img").forEach((img, i) => { img.loading = i < 2 ? "eager" : "lazy"; img.decoding = "async"; });
+  document.querySelectorAll("img").forEach((img, i) => {
+    if (!img.hasAttribute("loading")) img.loading = i < 2 ? "eager" : "lazy";
+    img.decoding = "async";
+  });
   const targets = document.querySelectorAll(".section:not(.catalog-section), .promo article, .product-card, .category-card");
   if (!("IntersectionObserver" in window)) {
     targets.forEach((element) => element.classList.add("visible"));
