@@ -320,6 +320,14 @@ function closeTransientUi() {
   updateBodyLock();
 }
 
+function bindOnce(selector, eventName, handler) {
+  const element = document.querySelector(selector);
+  const key = `bound${eventName}`;
+  if (!element || element.dataset[key]) return;
+  element.addEventListener(eventName, handler);
+  element.dataset[key] = "1";
+}
+
 function bindPage() {
   document.querySelectorAll("[data-add]").forEach((b) => b.addEventListener("click", () => addCart(Number(b.dataset.add), Number(document.querySelector(`#${b.dataset.qtySource}`)?.value || 1))));
   document.querySelectorAll("[data-wish]").forEach((b) => b.addEventListener("click", () => toggleWish(Number(b.dataset.wish))));
@@ -341,7 +349,12 @@ function bindPage() {
   document.querySelector("#checkoutForm")?.addEventListener("submit", checkout);
   document.querySelector("#contactForm")?.addEventListener("submit", contact);
   document.querySelectorAll("[data-open-assistant]").forEach((b) => b.addEventListener("click", openAssistant));
-  if (state.route === "/admin") loadAdmin();
+  if (state.route === "/admin") {
+    bindAdminShellActions();
+    loadAdmin().catch((error) => {
+      document.querySelector("#adminProductsTable").innerHTML = `<div class="error">${escapeHtml(error.message)}</div>`;
+    });
+  }
 }
 
 function applyFilters() {
@@ -562,6 +575,17 @@ function closeModals() {
   document.querySelectorAll(".modal").forEach((modal) => modal.classList.remove("open"));
   updateBodyLock();
 }
+function openImportModal() {
+  state.importRows = [];
+  state.importResult = null;
+  document.querySelector("#csvImportFile").value = "";
+  document.querySelector("#importPreview").innerHTML = "";
+  document.querySelector("#importValidation").innerHTML = "";
+  document.querySelector("#importResult").innerHTML = "";
+  document.querySelector("#runImportBtn").disabled = true;
+  document.querySelector("#importModal").classList.add("open");
+  updateBodyLock();
+}
 async function submitProductForm(event) {
   event.preventDefault();
   const form = event.currentTarget;
@@ -632,28 +656,11 @@ function inventoryManagementTable(products) {
   if (!products.length) return `<div class="empty">პროდუქტები ჯერ არ არის</div>`;
   return `<div class="table-wrap"><table><thead><tr><th>SKU</th><th>პროდუქტი</th><th>მარაგი</th><th>ქმედება</th></tr></thead><tbody>${products.map((p) => `<tr><td>${escapeHtml(p.sku)}</td><td>${escapeHtml(p.title)}<br><small>${escapeHtml(p.categoryTitle)}</small></td><td><input class="stock-input" type="number" min="0" max="100000" value="${p.stock}" data-stock-input="${p.id}"></td><td><button class="mini-btn" data-save-stock="${p.id}">შენახვა</button></td></tr>`).join("")}</tbody></table></div>`;
 }
-function bindAdminActions() {
-  const bindOnce = (selector, eventName, handler) => {
-    const element = document.querySelector(selector);
-    const key = `bound${eventName}`;
-    if (!element || element.dataset[key]) return;
-    element.addEventListener(eventName, handler);
-    element.dataset[key] = "1";
-  };
+function bindAdminShellActions() {
   bindOnce("#adminProductApply", "click", refreshAdminProducts);
   bindOnce("#adminProductQ", "keydown", (event) => { if (event.key === "Enter") refreshAdminProducts(); });
   bindOnce("#addProductBtn", "click", () => openProductModal());
-  bindOnce("#openImportBtn", "click", () => {
-    state.importRows = [];
-    state.importResult = null;
-    document.querySelector("#csvImportFile").value = "";
-    document.querySelector("#importPreview").innerHTML = "";
-    document.querySelector("#importValidation").innerHTML = "";
-    document.querySelector("#importResult").innerHTML = "";
-    document.querySelector("#runImportBtn").disabled = true;
-    document.querySelector("#importModal").classList.add("open");
-    updateBodyLock();
-  });
+  bindOnce("#openImportBtn", "click", openImportModal);
   document.querySelectorAll("[data-close-modal]").forEach((button) => {
     if (button.dataset.boundClick) return;
     button.addEventListener("click", closeModals);
@@ -685,6 +692,9 @@ function bindAdminActions() {
       button.disabled = false;
     }
   });
+}
+function bindAdminActions() {
+  bindAdminShellActions();
   document.querySelectorAll("[data-edit-product]").forEach((button) => button.addEventListener("click", () => {
     const product = state.adminProducts.find((item) => item.id === Number(button.dataset.editProduct));
     if (product) openProductModal(product);
