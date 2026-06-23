@@ -44,11 +44,14 @@ const secureAdminCookie = process.env.NODE_ENV === "production";
 const adminSessions = new Map();
 const appointmentBuckets = new Map();
 const buildInfo = readBuildInfo();
+const runtimeStartedAt = new Date().toISOString();
 const deploymentInfo = {
   commit: buildInfo.commit || process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || "local",
   branch: buildInfo.branch || process.env.RENDER_GIT_BRANCH || process.env.GIT_BRANCH || "local",
   version: buildInfo.version || "1.0.0",
-  buildTime: buildInfo.buildTime || "",
+  buildTime: buildInfo.buildTime || process.env.RENDER_DEPLOYED_AT || runtimeStartedAt,
+  buildSource: buildInfo.buildTime ? "build-info" : "runtime",
+  runtimeStartedAt,
   renderCommit: process.env.RENDER_GIT_COMMIT || "",
   renderBranch: process.env.RENDER_GIT_BRANCH || "",
   service: process.env.RENDER_SERVICE_NAME || "local",
