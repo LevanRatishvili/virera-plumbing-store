@@ -187,7 +187,10 @@ h1, h2, h3, p, a, span, b { overflow-wrap: anywhere; }
   border-radius: var(--radius);
   box-shadow: 0 16px 44px rgba(31,132,216,.08);
 }
-.benefit-grid article, .service-card, .doctor-card { padding: 24px; }
+.benefit-grid article, .service-card, .doctor-card {
+  padding: 24px;
+  min-height: 100%;
+}
 .icon {
   width: 42px;
   height: 42px;
@@ -201,7 +204,11 @@ h1, h2, h3, p, a, span, b { overflow-wrap: anywhere; }
 }
 .benefit-grid p, .service-card p, .doctor-card p, .prices p, .appointment p, .site-footer p { color: var(--muted); }
 .service-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.service-card { display: grid; gap: 8px; }
+.service-card {
+  display: grid;
+  gap: 8px;
+  grid-template-rows: auto auto 1fr auto;
+}
 .service-card:hover, .doctor-card:hover, .benefit-grid article:hover {
   transform: translateY(-2px);
   box-shadow: 0 20px 54px rgba(31,132,216,.12);
@@ -213,9 +220,15 @@ h1, h2, h3, p, a, span, b { overflow-wrap: anywhere; }
   gap: 10px;
 }
 .service-card div:first-child span { color: var(--blue); font-weight: 900; }
-.service-card a { color: var(--teal-dark); font-weight: 900; margin-top: 8px; }
+.service-card a { color: var(--teal-dark); font-weight: 900; margin-top: 8px; align-self: end; }
 .doctors { background: #ffffff; border-block: 1px solid var(--line); }
-.doctor-card { text-align: center; display: grid; justify-items: center; gap: 8px; }
+.doctor-card {
+  text-align: center;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  grid-template-rows: auto auto auto 1fr auto;
+}
 .doctor-photo {
   width: 96px;
   height: 96px;
@@ -228,6 +241,7 @@ h1, h2, h3, p, a, span, b { overflow-wrap: anywhere; }
   font-weight: 950;
 }
 .doctor-card span { color: var(--blue); font-weight: 850; }
+.doctor-card .btn { align-self: end; }
 
 .prices-grid, .appointment-grid, .contact-grid {
   display: grid;

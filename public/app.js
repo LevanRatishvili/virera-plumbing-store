@@ -1,27 +1,77 @@
-const services = [
-  ["თერაპია", "პირველადი კონსულტაცია, გეგმიური კონტროლი და ყოველდღიური ჯანმრთელობის მართვა.", "45 ლარიდან"],
-  ["კარდიოლოგია", "გულის რიტმის, წნევის და გულ-სისხლძარღვთა რისკების შეფასება.", "70 ლარიდან"],
-  ["პედიატრია", "ბავშვთა პროფილაქტიკური და გადაუდებელი ამბულატორიული კონსულტაციები.", "55 ლარიდან"],
-  ["ენდოკრინოლოგია", "ფარისებრი ჯირკვლის, დიაბეტის და ჰორმონული ბალანსის მართვა.", "65 ლარიდან"],
-  ["გინეკოლოგია", "პრევენციული ვიზიტები, კონსულტაციები და უსაფრთხო გეგმიური მონიტორინგი.", "70 ლარიდან"],
-  ["ნევროლოგია", "თავის ტკივილის, ძილის, მოძრაობისა და ნერვული სისტემის ჩივილების შეფასება.", "75 ლარიდან"],
-  ["ლაბორატორიული კვლევები", "საბაზისო ანალიზები და სწრაფი პასუხები ექიმის რეკომენდაციით.", "15 ლარიდან"],
-  ["ულტრაბგერითი კვლევა", "მუცლის ღრუს, ფარისებრი ჯირკვლისა და სხვა გეგმიური კვლევები.", "60 ლარიდან"]
-];
+const clinicContent = {
+  clinicName: "მედ ამბულატორია",
+  shortSlogan: "დემო კლინიკური ვებსაიტი",
+  heroLabel: "ამბულატორიული კლინიკა",
+  heroHeadline: "სანდო და მშვიდი ამბულატორიული ზრუნვა ერთ სივრცეში",
+  heroDescription: "დემო გვერდი აჩვენებს, როგორ შეიძლება გამოიყურებოდეს თანამედროვე კლინიკის ვებსაიტი: მკაფიო სერვისები, მარტივი ვიზიტის მოთხოვნა და პროფესიონალური საკონტაქტო ბლოკი.",
+  aboutLabel: "რატომ ჩვენ",
+  aboutHeadline: "კლინიკის გვერდი, სადაც პაციენტს საჭირო ინფორმაცია სწრაფად ხვდება",
+  aboutText: "ტექსტები დემო მონაცემებია და საბოლოო გაშვებამდე უნდა ჩანაცვლდეს კლინიკის ოფიციალური ინფორმაციით.",
+  primaryCta: "ვიზიტის დაჯავშნა",
+  secondaryCta: "სერვისების ნახვა",
+  heroStats: [
+    ["8+", "მიმართულება"],
+    ["4", "დემო ექიმი"],
+    ["24 სთ", "უკუკავშირის მიზანი"]
+  ],
+  heroAvailabilityTitle: "დემო განრიგი",
+  heroAvailabilityText: "თერაპია · კარდიოლოგია · პედიატრია",
+  servicesLabel: "სერვისები",
+  servicesHeadline: "ძირითადი სამედიცინო მიმართულებები",
+  servicesCta: "აირჩიეთ სერვისი და დაჯავშნეთ ვიზიტი",
+  services: [
+    { title: "თერაპია", description: "პირველადი კონსულტაცია, გეგმიური კონტროლი და ყოველდღიური ჯანმრთელობის ზოგადი შეფასება.", price: "საწყისი ფასი: 45 ლარიდან" },
+    { title: "კარდიოლოგია", description: "წნევის, გულის რიტმისა და გულ-სისხლძარღვთა რისკების საწყისი შეფასება.", price: "საწყისი ფასი: 70 ლარიდან" },
+    { title: "პედიატრია", description: "ბავშვთა გეგმიური კონსულტაცია და მშობლისთვის გასაგები რეკომენდაციების მომზადება.", price: "საწყისი ფასი: 55 ლარიდან" },
+    { title: "ენდოკრინოლოგია", description: "ფარისებრი ჯირკვლის, დიაბეტის და ჰორმონული ბალანსის კონსულტაცია.", price: "საწყისი ფასი: 65 ლარიდან" },
+    { title: "გინეკოლოგია", description: "პრევენციული ვიზიტები და გეგმიური ამბულატორიული კონსულტაცია.", price: "საწყისი ფასი: 70 ლარიდან" },
+    { title: "ნევროლოგია", description: "თავის ტკივილის, ძილისა და ნერვული სისტემის ჩივილების საწყისი შეფასება.", price: "საწყისი ფასი: 75 ლარიდან" },
+    { title: "ლაბორატორიული კვლევები", description: "საბაზისო ანალიზები ექიმის რეკომენდაციით და პასუხების ორგანიზებული მიღება.", price: "საწყისი ფასი: 15 ლარიდან" },
+    { title: "ულტრაბგერითი კვლევა", description: "გეგმიური ულტრაბგერითი კვლევები შესაბამისი სპეციალისტის მითითებით.", price: "საწყისი ფასი: 60 ლარიდან" }
+  ],
+  doctorsLabel: "ექიმები",
+  doctorsHeadline: "დემო სპეციალისტების გუნდი",
+  doctorsNote: "ეს არის დემო მონაცემები პრეზენტაციისთვის; რეალური ექიმების სახელები, ფოტოები და კვალიფიკაცია უნდა დაამტკიცოს კლინიკამ.",
+  doctors: [
+    { name: "დრ. ნინო მაისურაძე", specialty: "თერაპევტი", note: "დემო პროფილი" },
+    { name: "დრ. გიორგი ქავთარაძე", specialty: "კარდიოლოგი", note: "დემო პროფილი" },
+    { name: "დრ. თამარ ლომიძე", specialty: "პედიატრი", note: "დემო პროფილი" },
+    { name: "დრ. მარიამ ბერიძე", specialty: "ენდოკრინოლოგი", note: "დემო პროფილი" }
+  ],
+  benefits: [
+    { title: "გასაგები სტრუქტურა", text: "პაციენტს სწრაფად ხედავს სერვისებს, საკონტაქტო დეტალებს და ვიზიტის მოთხოვნის ფორმას." },
+    { title: "მინიმალური ფორმა", text: "ფორმა ითხოვს მხოლოდ იმ მონაცემებს, რაც საჭიროა ვიზიტზე დასაკავშირებლად." },
+    { title: "დემო-საფრთხის გარეშე", text: "ტექსტი არ ამტკიცებს ლიცენზიებს, ჯილდოებს ან ოფიციალურ ფასებს." },
+    { title: "ადვილად ჩანაცვლებადი", text: "კლინიკის რეალური მონაცემები თავმოყრილია ერთ რედაქტირებად სტრუქტურაში." }
+  ],
+  pricesLabel: "ფასები",
+  pricesHeadline: "საწყისი ფასები დემო ჩვენებისთვის",
+  pricesText: "ფასები მითითებულია როგორც საწყისი ან საორიენტაციო ინფორმაცია. საბოლოო ღირებულება დაზუსტდება კლინიკასთან და არ უნდა ჩაითვალოს ოფიციალურ საჯარო ფასად.",
+  appointmentLabel: "დაჯავშნა",
+  appointmentHeadline: "მოითხოვეთ ვიზიტი",
+  appointmentText: "შეავსეთ მინიმალური საკონტაქტო ინფორმაცია. ოპერატორი დაგიკავშირდებათ დროის დასადასტურებლად.",
+  privacyNote: "ფორმა არ ითხოვს დიაგნოზს, პირად ნომერს, სამედიცინო ისტორიას ან ანალიზის ფაილებს.",
+  consentCopy: "გაგზავნით ადასტურებთ, რომ საკონტაქტო მონაცემები გამოიყენება მხოლოდ ვიზიტის მოთხოვნაზე პასუხისთვის.",
+  commentPlaceholder: "არ მიუთითოთ დიაგნოზი ან მგრძნობიარე სამედიცინო ინფორმაცია",
+  contactLabel: "კონტაქტი",
+  contactHeadline: "დაგვიკავშირდით",
+  phone: "+995 599 12 34 56",
+  phoneHref: "+995599123456",
+  email: "info@example-clinic.ge",
+  address: "თბილისი, სამედიცინო ქუჩა 12",
+  workingHours: "ორშაბათი-შაბათი, 09:00-18:00",
+  mapTitle: "კლინიკის მდებარეობა",
+  mapPlaceholder: "რუკის ადგილი",
+  mapNote: "რეალური რუკა დაემატება საბოლოო მისამართის დადასტურების შემდეგ",
+  footerText: "სუფთა, მშვიდი და პაციენტზე ორიენტირებული ამბულატორიული კლინიკის დემო ვერსია.",
+  privacyLinkText: "პერსონალური მონაცემების დაცვა",
+  backToSite: "საიტზე დაბრუნება",
+  demoVersionNote: "პირველი კლინიკური ვერსია"
+};
 
-const doctors = [
-  ["დრ. ნინო მაისურაძე", "თერაპევტი", "12 წლიანი გამოცდილება"],
-  ["დრ. გიორგი ქავთარაძე", "კარდიოლოგი", "15 წლიანი გამოცდილება"],
-  ["დრ. თამარ ლომიძე", "პედიატრი", "10 წლიანი გამოცდილება"],
-  ["დრ. მარიამ ბერიძე", "ენდოკრინოლოგი", "9 წლიანი გამოცდილება"]
-];
-
-const benefits = [
-  ["გამოცდილი ექიმები", "სპეციალისტები, რომლებიც პაციენტთან მარტივად და გასაგებად საუბრობენ."],
-  ["თანამედროვე აღჭურვილობა", "სუფთა, ნათელი სივრცე და პირველადი დიაგნოსტიკის საჭირო პირობები."],
-  ["მოკლე ლოდინის დრო", "ვიზიტის წინასწარი დაჯავშნა და ოპერატორის სწრაფი უკუკავშირი."],
-  ["ინდივიდუალური მიდგომა", "ყოველი ვიზიტი იგეგმება პაციენტის საჭიროებისა და დროის გათვალისწინებით."]
-];
+const services = clinicContent.services.map(({ title, description, price }) => [title, description, price]);
+const doctors = clinicContent.doctors.map(({ name, specialty, note }) => [name, specialty, note]);
+const benefits = clinicContent.benefits.map(({ title, text }) => [title, text]);
 
 const statusLabels = {
   new: "ახალი",
@@ -65,13 +115,13 @@ function render() {
 }
 
 function renderClinic() {
-  document.title = "მედ ამბულატორია";
+  document.title = clinicContent.clinicName;
   app.innerHTML = `
     <header class="site-header">
       <div class="container header-grid">
-        <a class="brand" href="#top" aria-label="მედ ამბულატორია">
+        <a class="brand" href="#top" aria-label="${clinicContent.clinicName}">
           <span class="brand-mark">+</span>
-          <span><strong>მედ ამბულატორია</strong><small>პირველი კლინიკური ვერსია</small></span>
+          <span><strong>${clinicContent.clinicName}</strong><small>${clinicContent.demoVersionNote}</small></span>
         </a>
         <nav aria-label="მთავარი მენიუ">
           <a href="#top">მთავარი</a>
@@ -81,7 +131,7 @@ function renderClinic() {
           <a href="#prices">ფასები</a>
           <a href="#contact">კონტაქტი</a>
         </nav>
-        <a class="btn compact" href="#appointment">ვიზიტის დაჯავშნა</a>
+        <a class="btn compact" href="#appointment">${clinicContent.primaryCta}</a>
       </div>
     </header>
 
@@ -89,24 +139,22 @@ function renderClinic() {
       <section class="hero">
         <div class="container hero-grid">
           <div class="hero-copy">
-            <span class="eyebrow">ამბულატორიული კლინიკა</span>
-            <h1>სანდო სამედიცინო ზრუნვა თქვენთან ახლოს</h1>
-            <p>ვიღებთ პაციენტებს გეგმიურ კონსულტაციებზე, დიაგნოსტიკასა და პროფილაქტიკურ ვიზიტებზე. მარტივი დაჯავშნა, ყურადღებიანი ექიმები და ნათელი გარემო.</p>
+            <span class="eyebrow">${clinicContent.heroLabel}</span>
+            <h1>${clinicContent.heroHeadline}</h1>
+            <p>${clinicContent.heroDescription}</p>
             <div class="hero-actions">
-              <a class="btn" href="#appointment">ვიზიტის დაჯავშნა</a>
-              <a class="btn ghost" href="#services">სერვისების ნახვა</a>
+              <a class="btn" href="#appointment">${clinicContent.primaryCta}</a>
+              <a class="btn ghost" href="#services">${clinicContent.secondaryCta}</a>
             </div>
             <div class="hero-stats" aria-label="კლინიკის მაჩვენებლები">
-              <span><b>8+</b> მიმართულება</span>
-              <span><b>4</b> ექიმი v1-ში</span>
-              <span><b>24 სთ</b> უკუკავშირი</span>
+              ${clinicContent.heroStats.map(([value, label]) => `<span><b>${value}</b> ${label}</span>`).join("")}
             </div>
           </div>
           <div class="hero-visual">
             <img src="/assets/clinic-hero.png" alt="თანამედროვე კლინიკის ექიმი და პაციენტი">
             <div class="visit-card">
-              <b>დღეს ხელმისაწვდომია</b>
-              <span>თერაპია · კარდიოლოგია · პედიატრია</span>
+              <b>${clinicContent.heroAvailabilityTitle}</b>
+              <span>${clinicContent.heroAvailabilityText}</span>
             </div>
           </div>
         </div>
@@ -115,8 +163,9 @@ function renderClinic() {
       <section class="section trust" id="about">
         <div class="container">
           <div class="section-head">
-            <span class="eyebrow">რატომ ჩვენ</span>
-            <h2>კლინიკა, სადაც ვიზიტი მარტივი და გასაგებია</h2>
+            <span class="eyebrow">${clinicContent.aboutLabel}</span>
+            <h2>${clinicContent.aboutHeadline}</h2>
+            <p>${clinicContent.aboutText}</p>
           </div>
           <div class="benefit-grid">
             ${benefits.map(([title, text], index) => `<article>${icon(["✓","⌁","◷","♡"][index])}<h3>${title}</h3><p>${text}</p></article>`).join("")}
@@ -128,13 +177,13 @@ function renderClinic() {
         <div class="container">
           <div class="section-head split">
             <div>
-              <span class="eyebrow">სერვისები</span>
-              <h2>ძირითადი სამედიცინო მიმართულებები</h2>
+              <span class="eyebrow">${clinicContent.servicesLabel}</span>
+              <h2>${clinicContent.servicesHeadline}</h2>
             </div>
-            <a class="text-link" href="#appointment">აირჩიეთ სერვისი და დაჯავშნეთ ვიზიტი</a>
+            <a class="text-link" href="#appointment">${clinicContent.servicesCta}</a>
           </div>
           <div class="service-grid">
-            ${services.map(([title, text, price]) => `<article class="service-card"><div>${icon("+")}<span>საწყისი ფასი: ${price}</span></div><h3>${title}</h3><p>${text}</p><a href="#appointment" data-service="${title}">ვიზიტის დაჯავშნა</a></article>`).join("")}
+            ${services.map(([title, text, price]) => `<article class="service-card"><div>${icon("+")}<span>${price}</span></div><h3>${title}</h3><p>${text}</p><a href="#appointment" data-service="${title}">${clinicContent.primaryCta}</a></article>`).join("")}
           </div>
         </div>
       </section>
@@ -142,9 +191,9 @@ function renderClinic() {
       <section class="section doctors" id="doctors">
         <div class="container">
           <div class="section-head">
-            <span class="eyebrow">ექიმები</span>
-            <h2>სპეციალისტების პირველი გუნდი</h2>
-            <p>დემო პროფილებია პრეზენტაციისთვის; რეალური ექიმების მონაცემები მარტივად ჩანაცვლდება.</p>
+            <span class="eyebrow">${clinicContent.doctorsLabel}</span>
+            <h2>${clinicContent.doctorsHeadline}</h2>
+            <p>${clinicContent.doctorsNote}</p>
           </div>
           <div class="doctor-grid">
             ${doctors.map(([name, specialty, experience], index) => `<article class="doctor-card"><div class="doctor-photo">${["ნმ","გქ","თლ","მბ"][index]}</div><h3>${name}</h3><p>${specialty}</p><span>${experience}</span><a class="btn ghost" href="#appointment" data-doctor="${name}">დაჯავშნა</a></article>`).join("")}
@@ -155,12 +204,12 @@ function renderClinic() {
       <section class="section prices" id="prices">
         <div class="container prices-grid">
           <div>
-            <span class="eyebrow">ფასები</span>
-            <h2>გამჭვირვალე საწყისი ფასები</h2>
-            <p>ფასები მითითებულია საწყისი კონსულტაციისთვის. საბოლოო ღირებულება დამოკიდებულია საჭირო კვლევასა და ექიმის რეკომენდაციაზე.</p>
+            <span class="eyebrow">${clinicContent.pricesLabel}</span>
+            <h2>${clinicContent.pricesHeadline}</h2>
+            <p>${clinicContent.pricesText}</p>
           </div>
           <div class="price-list">
-            ${services.slice(0, 6).map(([title, , price]) => `<div><span>${title}</span><b>საწყისი ფასი: ${price}</b></div>`).join("")}
+            ${services.slice(0, 6).map(([title, , price]) => `<div><span>${title}</span><b>${price}</b></div>`).join("")}
           </div>
         </div>
       </section>
@@ -168,10 +217,10 @@ function renderClinic() {
       <section class="section appointment" id="appointment">
         <div class="container appointment-grid">
           <div>
-            <span class="eyebrow">დაჯავშნა</span>
-            <h2>მოითხოვეთ ვიზიტი</h2>
-            <p>შეავსეთ მხოლოდ მინიმალური ინფორმაცია. ოპერატორი დაგიკავშირდებათ დროის დასადასტურებლად.</p>
-            <div class="privacy-note">ფორმა არ ითხოვს დიაგნოზს, პირად ნომერს, სამედიცინო ისტორიას ან ანალიზის ფაილებს.</div>
+            <span class="eyebrow">${clinicContent.appointmentLabel}</span>
+            <h2>${clinicContent.appointmentHeadline}</h2>
+            <p>${clinicContent.appointmentText}</p>
+            <div class="privacy-note">${clinicContent.privacyNote}</div>
           </div>
           <form id="appointmentForm" class="appointment-form">
             <label class="hp-field" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off"></label>
@@ -181,8 +230,8 @@ function renderClinic() {
             <label>ექიმი<select name="doctor"><option value="">ნებისმიერი ხელმისაწვდომი ექიმი</option>${doctors.map(([name]) => `<option>${name}</option>`).join("")}</select></label>
             <label>სასურველი თარიღი<input name="preferredDate" type="date" required></label>
             <label>სასურველი დრო<input name="preferredTime" type="time" required></label>
-            <label class="wide">კომენტარი<textarea name="comment" maxlength="500" placeholder="არ მიუთითოთ დიაგნოზი ან მგრძნობიარე სამედიცინო ინფორმაცია"></textarea></label>
-            <p class="consent-note wide">გაგზავნით ადასტურებთ, რომ საკონტაქტო მონაცემები გამოიყენება მხოლოდ ვიზიტის მოთხოვნაზე პასუხისთვის.</p>
+            <label class="wide">კომენტარი<textarea name="comment" maxlength="500" placeholder="${clinicContent.commentPlaceholder}"></textarea></label>
+            <p class="consent-note wide">${clinicContent.consentCopy}</p>
             <button class="btn wide" type="submit">მოთხოვნის გაგზავნა</button>
             <div id="formStatus" class="form-status" aria-live="polite"></div>
           </form>
@@ -192,17 +241,18 @@ function renderClinic() {
       <section class="section contact" id="contact">
         <div class="container contact-grid">
           <div>
-            <span class="eyebrow">კონტაქტი</span>
-            <h2>დაგვიკავშირდით</h2>
-            <p><b>ტელეფონი:</b> +995 599 12 34 56</p>
-            <p><b>მისამართი:</b> თბილისი, სამედიცინო ქუჩა 12</p>
-            <p><b>სამუშაო საათები:</b> ორშაბათი-შაბათი, 09:00-18:00</p>
-            <a class="btn compact call-btn" href="tel:+995599123456">დარეკვა</a>
+            <span class="eyebrow">${clinicContent.contactLabel}</span>
+            <h2>${clinicContent.contactHeadline}</h2>
+            <p><b>ტელეფონი:</b> ${clinicContent.phone}</p>
+            <p><b>მისამართი:</b> ${clinicContent.address}</p>
+            <p><b>ელფოსტა:</b> ${clinicContent.email}</p>
+            <p><b>სამუშაო საათები:</b> ${clinicContent.workingHours}</p>
+            <a class="btn compact call-btn" href="tel:${clinicContent.phoneHref}">დარეკვა</a>
           </div>
           <div class="map-placeholder">
-            <span>რუკის ადგილი</span>
-            <b>კლინიკის მდებარეობა</b>
-            <small>რეალური რუკა დაემატება შემდეგ ვერსიაში</small>
+            <span>${clinicContent.mapPlaceholder}</span>
+            <b>${clinicContent.mapTitle}</b>
+            <small>${clinicContent.mapNote}</small>
           </div>
         </div>
       </section>
@@ -210,9 +260,9 @@ function renderClinic() {
 
     <footer class="site-footer">
       <div class="container footer-grid">
-        <div><b>მედ ამბულატორია</b><p>სუფთა, მშვიდი და პაციენტზე ორიენტირებული ამბულატორიული კლინიკის პირველი ვერსია.</p></div>
+        <div><b>${clinicContent.clinicName}</b><p>${clinicContent.footerText}</p></div>
         <div><b>სერვისები</b>${services.slice(0, 5).map(([title]) => `<a href="#services">${title}</a>`).join("")}</div>
-        <div><b>კონტაქტი</b><p>+995 599 12 34 56<br>თბილისი, სამედიცინო ქუჩა 12</p><a href="#privacy">პერსონალური მონაცემების დაცვა</a>${buildMarker()}</div>
+        <div><b>კონტაქტი</b><p>${clinicContent.phone}<br>${clinicContent.address}</p><a href="#privacy">${clinicContent.privacyLinkText}</a>${buildMarker()}</div>
       </div>
     </footer>
   `;
