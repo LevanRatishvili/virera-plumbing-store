@@ -9,7 +9,7 @@ const info = {
   appVersion: pkg.version,
   version: pkg.version,
   buildTime: new Date().toISOString(),
-  environment: process.env.NODE_ENV || "development"
+  environment: process.env.NODE_ENV || (process.env.RENDER_GIT_COMMIT ? "production" : "development")
 };
 info.shortCommit = info.commit.slice(0, 7);
 
