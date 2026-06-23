@@ -454,6 +454,14 @@ textarea { min-height: 112px; resize: vertical; }
 }
 .site-footer a, .site-footer p { display: block; color: rgba(255,255,255,.72); margin: 6px 0; }
 .site-footer b { color: white; }
+.build-marker {
+  display: block;
+  margin-top: 10px;
+  color: rgba(255,255,255,.58);
+  font-size: 12px;
+  font-weight: 800;
+}
+.login-card .build-marker { color: var(--muted); }
 
 @media (max-width: 980px) {
   .header-grid, .hero-grid, .prices-grid, .appointment-grid, .contact-grid { grid-template-columns: 1fr; }

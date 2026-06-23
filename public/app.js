@@ -50,6 +50,11 @@ function icon(label) {
   return `<span class="icon" aria-hidden="true">${label}</span>`;
 }
 
+function buildMarker() {
+  const commit = document.querySelector("meta[name='app-commit']")?.content || "";
+  return commit ? `<small class="build-marker">Build: ${escapeHtml(commit.slice(0, 7))}</small>` : "";
+}
+
 function isAdminRoute() {
   return location.pathname === "/admin" || location.hash === "#/admin";
 }
@@ -207,7 +212,7 @@ function renderClinic() {
       <div class="container footer-grid">
         <div><b>მედ ამბულატორია</b><p>სუფთა, მშვიდი და პაციენტზე ორიენტირებული ამბულატორიული კლინიკის პირველი ვერსია.</p></div>
         <div><b>სერვისები</b>${services.slice(0, 5).map(([title]) => `<a href="#services">${title}</a>`).join("")}</div>
-        <div><b>კონტაქტი</b><p>+995 599 12 34 56<br>თბილისი, სამედიცინო ქუჩა 12</p><a href="#privacy">პერსონალური მონაცემების დაცვა</a></div>
+        <div><b>კონტაქტი</b><p>+995 599 12 34 56<br>თბილისი, სამედიცინო ქუჩა 12</p><a href="#privacy">პერსონალური მონაცემების დაცვა</a>${buildMarker()}</div>
       </div>
     </footer>
   `;
@@ -292,6 +297,7 @@ function renderAdminLogin({ disabled = false, message = "", error = "" } = {}) {
           <label>პაროლი<input name="password" type="password" required autocomplete="current-password" ${disabled ? "disabled" : ""}></label>
           <button class="btn" type="submit" ${disabled ? "disabled" : ""}>შესვლა</button>
           <a class="btn ghost" href="/">საიტზე დაბრუნება</a>
+          ${buildMarker()}
           <div id="adminLoginStatus" class="form-status ${disabled || error ? "error-text" : ""}" aria-live="polite">${escapeHtml(message || error)}</div>
         </form>
       </section>

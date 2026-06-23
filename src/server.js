@@ -46,9 +46,11 @@ const appointmentBuckets = new Map();
 const buildInfo = readBuildInfo();
 const runtimeStartedAt = new Date().toISOString();
 const deploymentInfo = {
+  appName: buildInfo.appName || "virera-plumbing-store",
   commit: buildInfo.commit || process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || "local",
   branch: buildInfo.branch || process.env.RENDER_GIT_BRANCH || process.env.GIT_BRANCH || "local",
-  version: buildInfo.version || "1.0.0",
+  appVersion: buildInfo.appVersion || buildInfo.version || "1.0.0",
+  version: buildInfo.appVersion || buildInfo.version || "1.0.0",
   buildTime: buildInfo.buildTime || process.env.RENDER_DEPLOYED_AT || runtimeStartedAt,
   buildSource: buildInfo.buildTime ? "build-info" : "runtime",
   runtimeStartedAt,
@@ -58,6 +60,7 @@ const deploymentInfo = {
   deployedAt: process.env.RENDER_DEPLOYED_AT || "",
   environment: process.env.NODE_ENV || "development"
 };
+deploymentInfo.shortCommit = deploymentInfo.commit.slice(0, 7);
 
 initDatabase();
 
@@ -508,6 +511,12 @@ async function serveStatic(res, pathname, method = "GET") {
   const headers = { "Content-Type": mimeTypes[ext] || "application/octet-stream" };
   if ([".png", ".jpg", ".jpeg", ".webp"].includes(ext)) headers["Cache-Control"] = "public, max-age=3600";
   if ([".css", ".js", ".html"].includes(ext)) headers["Cache-Control"] = "no-cache";
+  if (pathname === "/build-info.json") {
+    headers["Cache-Control"] = "no-store, no-cache, must-revalidate, proxy-revalidate";
+    headers["Pragma"] = "no-cache";
+    headers["Expires"] = "0";
+    headers["Surrogate-Control"] = "no-store";
+  }
   res.writeHead(200, headers);
   if (method === "HEAD") return res.end();
   if (filePath === indexPath) return res.end(injectBuildMarkers(await readFile(filePath, "utf8")));

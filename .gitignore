@@ -3,6 +3,7 @@ node_modules
 .env.local
 .render-deploy.env
 .build-info.json
+public/build-info.json
 .DS_Store
 *.log
 data/*.sqlite-journal
