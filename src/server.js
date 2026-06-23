@@ -15,6 +15,7 @@ import {
   allOrders,
   allProducts,
   adminProducts,
+  cleanupSmokeAppointmentRequests,
   createAdminProduct,
   createAppointmentRequest,
   createContactMessage,
@@ -82,6 +83,7 @@ async function handleApi(req, res, url) {
   if (req.method === "POST" && url.pathname === "/api/admin/logout") return adminLogoutRoute(req, res);
   if (req.method === "POST" && url.pathname === "/api/appointments") return appointmentRoute(req, res, body);
   if (url.pathname.startsWith("/api/admin/") && !isAdminAuthenticated(req)) return unauthorized(res);
+  if (req.method === "POST" && url.pathname === "/api/admin/appointments/cleanup-smoke") return sendJson(res, 200, { success: true, removed: cleanupSmokeAppointmentRequests() });
   if (req.method === "GET" && url.pathname === "/api/admin/appointments") return sendJson(res, 200, allAppointmentRequests(Object.fromEntries(url.searchParams)));
   if (req.method === "PATCH" && url.pathname.match(/^\/api\/admin\/appointments\/\d+\/status$/)) return appointmentStatusRoute(res, Number(url.pathname.split("/")[4]), body);
   if (req.method === "GET" && url.pathname === "/api/admin/products") return sendJson(res, 200, adminProducts(Object.fromEntries(url.searchParams)));

@@ -337,6 +337,7 @@ function renderAdminDashboard() {
           </div>
           <div class="admin-actions">
             <a class="btn ghost compact" href="/">საიტზე დაბრუნება</a>
+            <button class="btn ghost compact" id="adminCleanup" type="button">ტესტების გასუფთავება</button>
             <button class="btn ghost compact" id="adminLogout" type="button">გასვლა</button>
           </div>
         </div>
@@ -362,11 +363,23 @@ function renderAdminDashboard() {
 }
 
 function bindAdmin() {
+  document.querySelector("#adminCleanup").addEventListener("click", cleanupSmokeAppointments);
   document.querySelector("#adminLogout").addEventListener("click", adminLogout);
   document.querySelector("#adminApply").addEventListener("click", loadAppointments);
   document.querySelector("#adminSearch").addEventListener("keydown", (event) => {
     if (event.key === "Enter") loadAppointments();
   });
+}
+
+async function cleanupSmokeAppointments() {
+  const text = document.querySelector("#adminStatusText");
+  try {
+    const result = await api("/api/admin/appointments/cleanup-smoke", { method: "POST", body: {} });
+    text.textContent = `${result.removed || 0} ტესტი გასუფთავდა`;
+    await loadAppointments();
+  } catch (error) {
+    text.textContent = error.message;
+  }
 }
 
 async function loadAppointments() {

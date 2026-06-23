@@ -123,8 +123,8 @@ function migrateProductsTable() {
   if (!orderColumns.includes("comment")) db.exec("ALTER TABLE orders ADD COLUMN comment TEXT NOT NULL DEFAULT ''");
 }
 
-function cleanupSmokeAppointmentRequests() {
-  db.prepare(`
+export function cleanupSmokeAppointmentRequests() {
+  const result = db.prepare(`
     DELETE FROM appointment_requests
     WHERE lower(full_name) LIKE '%smoke%'
        OR lower(full_name) LIKE '%codex%'
@@ -137,6 +137,7 @@ function cleanupSmokeAppointmentRequests() {
        OR lower(comment) LIKE '%admin route verification%'
        OR lower(comment) LIKE '%codex%'
   `).run();
+  return result.changes;
 }
 
 function seed() {
