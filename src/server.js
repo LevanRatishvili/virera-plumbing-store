@@ -33,6 +33,7 @@ import {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir = join(__dirname, "..", "public");
+const indexPath = join(publicDir, "index.html");
 const port = Number(process.env.PORT || 3000);
 const openAiApiKey = process.env.OPENAI_API_KEY || "";
 const openAiModel = process.env.OPENAI_MODEL || "gpt-5-mini";
@@ -59,11 +60,15 @@ const mimeTypes = {
 };
 
 createServer(async (req, res) => {
+  let pathname = "/";
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
+    pathname = url.pathname;
     if (url.pathname.startsWith("/api/")) return handleApi(req, res, url);
-    return serveStatic(res, url.pathname);
+    if (isAdminPath(url.pathname)) return serveAdminShell(res, req.method);
+    return serveStatic(res, url.pathname, req.method);
   } catch (error) {
+    if (isAdminPath(pathname)) return serveAdminFallback(res);
     sendJson(res, 500, { error: "Server error", detail: error.message });
   }
 }).listen(port, () => console.log(`Clinic site running at http://localhost:${port}`));
@@ -453,14 +458,46 @@ async function readJson(req) {
 function safeJson(raw) {
   try { return JSON.parse(raw); } catch { const m = String(raw || "").match(/\{[\s\S]*\}/); try { return m ? JSON.parse(m[0]) : null; } catch { return null; } }
 }
-async function serveStatic(res, pathname) {
-  let filePath = pathname === "/" ? join(publicDir, "index.html") : join(publicDir, pathname);
-  if (!existsSync(filePath) || !filePath.startsWith(publicDir)) filePath = join(publicDir, "index.html");
+function isAdminPath(pathname) {
+  return pathname === "/admin" || pathname === "/admin/";
+}
+
+async function serveAdminShell(res, method = "GET") {
+  const headers = { "Content-Type": mimeTypes[".html"], "Cache-Control": "no-cache" };
+  res.writeHead(200, headers);
+  if (method === "HEAD") return res.end();
+  res.end(await readFile(indexPath));
+}
+
+function serveAdminFallback(res) {
+  const html = `<!doctype html>
+<html lang="ka">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ადმინის შესვლა | მედ ამბულატორია</title>
+  </head>
+  <body>
+    <main style="font-family: system-ui, sans-serif; max-width: 520px; margin: 12vh auto; padding: 24px;">
+      <h1>ადმინის შესვლა</h1>
+      <p>ადმინის გვერდი დროებით ვერ ჩაიტვირთა. სცადეთ გვერდის განახლება ან დაუკავშირდით ადმინისტრატორს.</p>
+      <a href="/admin">განახლება</a>
+    </main>
+  </body>
+</html>`;
+  res.writeHead(200, { "Content-Type": mimeTypes[".html"], "Cache-Control": "no-cache" });
+  res.end(html);
+}
+
+async function serveStatic(res, pathname, method = "GET") {
+  let filePath = pathname === "/" ? indexPath : join(publicDir, pathname);
+  if (!existsSync(filePath) || !filePath.startsWith(publicDir)) filePath = indexPath;
   const ext = extname(filePath);
   const headers = { "Content-Type": mimeTypes[ext] || "application/octet-stream" };
   if ([".png", ".jpg", ".jpeg", ".webp"].includes(ext)) headers["Cache-Control"] = "public, max-age=3600";
   if ([".css", ".js", ".html"].includes(ext)) headers["Cache-Control"] = "no-cache";
   res.writeHead(200, headers);
+  if (method === "HEAD") return res.end();
   res.end(await readFile(filePath));
 }
 function sendJson(res, status, payload) {
