@@ -1,8 +1,8 @@
-# VirEra Plumbing Store
+# Med Ambulatory Clinic
 
-Premium dark-showroom plumbing, bathroom, and interior products store for the Gori demo market.
+Georgian ambulatory clinic website with public appointment requests and a protected admin appointment dashboard.
 
-The project is a vanilla frontend with a local Node.js backend, SQLite database, Prisma schema reference, admin product management, CSV product import, order requests, contact/operator requests, cart/wishlist, and a Georgian AI sales assistant fallback.
+The project is a vanilla frontend with a local Node.js backend, SQLite database, Prisma schema reference, public appointment request form, and protected admin appointment management.
 
 ## Tech Stack
 
@@ -58,12 +58,15 @@ Validates the Prisma schema.
 Optional:
 
 ```text
+ADMIN_PASSWORD=
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-5-mini
 PORT=3000
 ```
 
 If `OPENAI_API_KEY` is not set, the AI assistant remains available in local rule-based mode. The API key is used only on the backend and is never exposed to the frontend.
+
+`ADMIN_PASSWORD` is required for production admin access. See `ADMIN_ACCESS.md`.
 
 ## Database
 
@@ -85,7 +88,7 @@ data/*.sqlite-wal
 data/*.sqlite-shm
 ```
 
-## Admin Demo Notes
+## Admin Access
 
 Open:
 
@@ -93,21 +96,13 @@ Open:
 http://localhost:3000/#/admin
 ```
 
-Admin includes:
+The admin area requires `ADMIN_PASSWORD` and manages appointment requests. See `ADMIN_ACCESS.md` for local and Render setup.
 
-- product table
-- product add/edit/delete
-- CSV product import
-- order requests
-- customer phone numbers
-- requested products
-- order status changes
-- inventory quick edit
-- contact/operator requests
+## Legacy Plumbing Store Notes
 
-## CSV Import
+The repo still contains legacy ecommerce database tables, backend helpers, package naming, and Render service naming from the earlier plumbing-store prototype. These are not shown on the current public clinic homepage. Avoid renaming deployment resources casually because Render/GitHub deployment wiring depends on them.
 
-Admin CSV import accepts these columns:
+Legacy admin CSV import accepted these columns:
 
 ```text
 SKU,name,category,brand,description,price,salePrice,stock,images,attributes,status
@@ -254,7 +249,7 @@ Recommended push flow:
 git init
 git branch -M main
 git add .
-git commit -m "Prepare plumbing store for deployment"
+git commit -m "Prepare clinic site for deployment"
 git remote add origin https://github.com/<OWNER>/virera-plumbing-store.git
 git push -u origin main
 ```
@@ -270,12 +265,9 @@ Do not commit:
 
 After deployment, verify:
 
-- homepage
-- shop
-- product detail
-- add to order/cart
-- order request
-- admin products
-- admin order requests
-- AI assistant
+- public clinic homepage
+- public appointment request form
+- `/admin` requires login
+- protected appointment admin APIs return unauthorized without login
+- admin appointment list and status update after login
 - mobile layout

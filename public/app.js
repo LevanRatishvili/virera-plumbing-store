@@ -36,6 +36,7 @@ const app = document.querySelector("#app");
 function api(path, options = {}) {
   return fetch(path, {
     method: options.method || "GET",
+    credentials: "same-origin",
     headers: options.body ? { "Content-Type": "application/json" } : {},
     body: options.body ? JSON.stringify(options.body) : undefined
   }).then(async (response) => {
@@ -167,6 +168,7 @@ function renderClinic() {
             <div class="privacy-note">ფორმა არ ითხოვს დიაგნოზს, პირად ნომერს, სამედიცინო ისტორიას ან ანალიზის ფაილებს.</div>
           </div>
           <form id="appointmentForm" class="appointment-form">
+            <label class="hp-field" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off"></label>
             <label>სახელი და გვარი<input name="fullName" required autocomplete="name"></label>
             <label>ტელეფონი<input name="phone" required autocomplete="tel"></label>
             <label>სერვისი<select name="service" required>${services.map(([title]) => `<option>${title}</option>`).join("")}</select></label>
@@ -257,7 +259,70 @@ async function submitAppointment(event) {
   }
 }
 
-function renderAdmin() {
+async function renderAdmin() {
+  document.title = "ადმინი | მედ ამბულატორია";
+  app.innerHTML = `
+    <main class="admin-page">
+      <section class="admin-shell">
+        <div class="empty-state">იტვირთება...</div>
+      </section>
+    </main>
+  `;
+  try {
+    const session = await api("/api/admin/session");
+    if (session.disabled) return renderAdminLogin({ disabled: true, message: session.message });
+    if (!session.authenticated) return renderAdminLogin();
+    return renderAdminDashboard();
+  } catch (error) {
+    renderAdminLogin({ error: error.message });
+  }
+}
+
+function renderAdminLogin({ disabled = false, message = "", error = "" } = {}) {
+  document.title = "ადმინის შესვლა | მედ ამბულატორია";
+  app.innerHTML = `
+    <main class="admin-page">
+      <section class="login-card">
+        <span class="eyebrow">ადმინი</span>
+        <h1>ადმინის შესვლა</h1>
+        <p>ჩაწერის მოთხოვნების სანახავად საჭიროა პაროლი.</p>
+        <form id="adminLoginForm" class="login-form">
+          <label>პაროლი<input name="password" type="password" required autocomplete="current-password" ${disabled ? "disabled" : ""}></label>
+          <button class="btn" type="submit" ${disabled ? "disabled" : ""}>შესვლა</button>
+          <a class="btn ghost" href="/">საიტზე დაბრუნება</a>
+          <div id="adminLoginStatus" class="form-status ${disabled || error ? "error-text" : ""}" aria-live="polite">${escapeHtml(message || error)}</div>
+        </form>
+      </section>
+    </main>
+  `;
+  if (!disabled) document.querySelector("#adminLoginForm").addEventListener("submit", adminLogin);
+}
+
+async function adminLogin(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const button = form.querySelector("button[type='submit']");
+  const status = document.querySelector("#adminLoginStatus");
+  button.disabled = true;
+  status.className = "form-status";
+  status.textContent = "";
+  try {
+    await api("/api/admin/login", { method: "POST", body: { password: form.password.value } });
+    renderAdminDashboard();
+  } catch (error) {
+    status.classList.add("error-text");
+    status.textContent = error.message;
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function adminLogout() {
+  await api("/api/admin/logout", { method: "POST", body: {} }).catch(() => null);
+  renderAdminLogin();
+}
+
+function renderAdminDashboard() {
   document.title = "ჩაწერის მოთხოვნები | მედ ამბულატორია";
   app.innerHTML = `
     <main class="admin-page">
@@ -268,7 +333,10 @@ function renderAdmin() {
             <h1>ჩაწერის მოთხოვნები</h1>
             <p>მინიმალური ამბულატორიული ჩაწერის მოთხოვნები. აქ არ ინახება დიაგნოზი, პირადი ნომერი, ისტორია ან ფაილები.</p>
           </div>
-          <a class="btn ghost compact" href="/">საიტზე დაბრუნება</a>
+          <div class="admin-actions">
+            <a class="btn ghost compact" href="/">საიტზე დაბრუნება</a>
+            <button class="btn ghost compact" id="adminLogout" type="button">გასვლა</button>
+          </div>
         </div>
         <div class="admin-filters">
           <input id="adminSearch" placeholder="სახელი ან ტელეფონი">
@@ -292,6 +360,7 @@ function renderAdmin() {
 }
 
 function bindAdmin() {
+  document.querySelector("#adminLogout").addEventListener("click", adminLogout);
   document.querySelector("#adminApply").addEventListener("click", loadAppointments);
   document.querySelector("#adminSearch").addEventListener("keydown", (event) => {
     if (event.key === "Enter") loadAppointments();
@@ -330,7 +399,7 @@ function appointmentTable(rows) {
       <td data-label="სერვისი">${escapeHtml(row.service)}${row.doctor ? `<br><small>${escapeHtml(row.doctor)}</small>` : ""}</td>
       <td data-label="თარიღი/დრო">${escapeHtml(row.preferredDate)}<br><small>${escapeHtml(row.preferredTime)}</small></td>
       <td data-label="კომენტარი">${escapeHtml(row.comment || "—")}</td>
-      <td data-label="სტატუსი"><select data-status-id="${row.id}">${Object.entries(statusLabels).map(([value, label]) => `<option value="${value}" ${row.status === value ? "selected" : ""}>${label}</option>`).join("")}</select></td>
+      <td data-label="სტატუსი"><span class="status-pill status-${escapeHtml(row.status)}">${escapeHtml(statusLabels[row.status] || row.status)}</span><select data-status-id="${row.id}">${Object.entries(statusLabels).map(([value, label]) => `<option value="${value}" ${row.status === value ? "selected" : ""}>${label}</option>`).join("")}</select></td>
       <td data-label="შექმნა">${escapeHtml(row.createdAt)}</td>
     </tr>`).join("")}</tbody>
   </table></div>`;

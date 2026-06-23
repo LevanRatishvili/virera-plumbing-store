@@ -1,4 +1,5 @@
 import { createServer } from "node:http";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { extname, join, dirname } from "node:path";
@@ -35,6 +36,10 @@ const publicDir = join(__dirname, "..", "public");
 const port = Number(process.env.PORT || 3000);
 const openAiApiKey = process.env.OPENAI_API_KEY || "";
 const openAiModel = process.env.OPENAI_MODEL || "gpt-5-mini";
+const adminPassword = process.env.ADMIN_PASSWORD || (process.env.NODE_ENV === "production" ? "" : "dev-admin");
+const secureAdminCookie = process.env.NODE_ENV === "production";
+const adminSessions = new Map();
+const appointmentBuckets = new Map();
 const deploymentInfo = {
   commit: process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || "local",
   branch: process.env.RENDER_GIT_BRANCH || process.env.GIT_BRANCH || "local",
@@ -67,7 +72,11 @@ async function handleApi(req, res, url) {
   const body = ["POST", "PATCH"].includes(req.method) ? await readJson(req) : {};
   if (req.method === "GET" && url.pathname === "/api/deployment") return sendJson(res, 200, deploymentInfo);
   if (req.method === "GET" && url.pathname === "/api/config") return sendJson(res, 200, storeConfig);
-  if (req.method === "POST" && url.pathname === "/api/appointments") return appointmentRoute(res, body);
+  if (req.method === "GET" && url.pathname === "/api/admin/session") return adminSessionRoute(req, res);
+  if (req.method === "POST" && url.pathname === "/api/admin/login") return adminLoginRoute(req, res, body);
+  if (req.method === "POST" && url.pathname === "/api/admin/logout") return adminLogoutRoute(req, res);
+  if (req.method === "POST" && url.pathname === "/api/appointments") return appointmentRoute(req, res, body);
+  if (url.pathname.startsWith("/api/admin/") && !isAdminAuthenticated(req)) return unauthorized(res);
   if (req.method === "GET" && url.pathname === "/api/admin/appointments") return sendJson(res, 200, allAppointmentRequests(Object.fromEntries(url.searchParams)));
   if (req.method === "PATCH" && url.pathname.match(/^\/api\/admin\/appointments\/\d+\/status$/)) return appointmentStatusRoute(res, Number(url.pathname.split("/")[4]), body);
   if (req.method === "GET" && url.pathname === "/api/admin/products") return sendJson(res, 200, adminProducts(Object.fromEntries(url.searchParams)));
@@ -83,20 +92,22 @@ async function handleApi(req, res, url) {
     return product && (product.status || "active") === "active" ? sendJson(res, 200, productDetailPayload(product)) : sendJson(res, 404, { error: "Product not found" });
   }
   if (req.method === "PATCH" && url.pathname.match(/^\/api\/products\/\d+\/stock$/)) {
+    if (!isAdminAuthenticated(req)) return unauthorized(res);
     const stock = Number(body.stock);
     if (!Number.isFinite(stock) || stock < 0 || stock > 100000) return sendJson(res, 400, { error: "მარაგის რაოდენობა არასწორია" });
     const product = updateProductStock(Number(url.pathname.split("/")[3]), Math.round(stock));
     return product ? sendJson(res, 200, product) : sendJson(res, 404, { error: "პროდუქტი ვერ მოიძებნა" });
   }
   if (req.method === "POST" && url.pathname === "/api/orders") return orderRoute(res, body);
-  if (req.method === "GET" && url.pathname === "/api/orders") return sendJson(res, 200, allOrders());
+  if (req.method === "GET" && url.pathname === "/api/orders") return isAdminAuthenticated(req) ? sendJson(res, 200, allOrders()) : unauthorized(res);
   if (req.method === "PATCH" && url.pathname.match(/^\/api\/orders\/\d+\/status$/)) {
+    if (!isAdminAuthenticated(req)) return unauthorized(res);
     if (!["new", "contacted", "confirmed", "completed", "cancelled"].includes(body.status)) return sendJson(res, 400, { error: "სტატუსი არასწორია" });
     return sendJson(res, 200, updateOrderStatus(Number(url.pathname.split("/")[3]), body.status));
   }
-  if (req.method === "GET" && url.pathname === "/api/customers") return sendJson(res, 200, allCustomers());
+  if (req.method === "GET" && url.pathname === "/api/customers") return isAdminAuthenticated(req) ? sendJson(res, 200, allCustomers()) : unauthorized(res);
   if (req.method === "POST" && url.pathname === "/api/contact") return contactRoute(res, body);
-  if (req.method === "GET" && url.pathname === "/api/contact-messages") return sendJson(res, 200, { contactMessages: allContactMessages(), operatorRequests: allOperatorRequests() });
+  if (req.method === "GET" && url.pathname === "/api/contact-messages") return isAdminAuthenticated(req) ? sendJson(res, 200, { contactMessages: allContactMessages(), operatorRequests: allOperatorRequests() }) : unauthorized(res);
   if (req.method === "POST" && url.pathname === "/api/operator-request") return operatorRoute(res, body);
   if (req.method === "POST" && url.pathname === "/api/chat") return chatRoute(res, body);
   return sendJson(res, 404, { error: "API route not found" });
@@ -186,20 +197,37 @@ function adminImportProductsRoute(res, body) {
   }
 }
 
-function appointmentRoute(res, body) {
+function adminSessionRoute(req, res) {
+  if (!adminPassword) return sendJson(res, 200, { authenticated: false, disabled: true, message: "ადმინი გამორთულია. დააყენეთ ADMIN_PASSWORD გარემოს ცვლადი." });
+  return sendJson(res, 200, { authenticated: isAdminAuthenticated(req), disabled: false });
+}
+
+function adminLoginRoute(req, res, body) {
+  if (!adminPassword) return sendJson(res, 503, { success: false, message: "ადმინი გამორთულია. დააყენეთ ADMIN_PASSWORD გარემოს ცვლადი." });
+  if (!safeEqual(String(body.password || ""), adminPassword)) return sendJson(res, 401, { success: false, message: "პაროლი არასწორია" });
+  const token = randomBytes(32).toString("hex");
+  adminSessions.set(hashToken(token), Date.now() + 1000 * 60 * 60 * 8);
+  cleanupAdminSessions();
+  setCookie(res, "admin_session", token, { httpOnly: true, secure: secureAdminCookie, sameSite: "Lax", maxAge: 60 * 60 * 8, path: "/" });
+  return sendJson(res, 200, { success: true, message: "შესვლა წარმატებულია" });
+}
+
+function adminLogoutRoute(req, res) {
+  const token = parseCookies(req.headers.cookie || "").admin_session;
+  if (token) adminSessions.delete(hashToken(token));
+  setCookie(res, "admin_session", "", { httpOnly: true, secure: secureAdminCookie, sameSite: "Lax", maxAge: 0, path: "/" });
+  return sendJson(res, 200, { success: true, message: "გამოსვლა შესრულდა" });
+}
+
+function appointmentRoute(req, res, body) {
   try {
-    const required = validateRequired(body, ["fullName", "phone", "service", "preferredDate", "preferredTime"]);
+    if (!rateLimitAppointment(req)) return sendJson(res, 429, { success: false, message: "გთხოვთ სცადოთ ცოტა მოგვიანებით" });
+    if (String(body.website || "").trim()) return sendJson(res, 200, { success: true, message: "ჩაწერის მოთხოვნა მიღებულია. ოპერატორი დაგიკავშირდებათ ვიზიტის დასადასტურებლად." });
+    const cleaned = cleanAppointmentInput(body);
+    const required = validateRequired(cleaned, ["fullName", "phone", "service", "preferredDate", "preferredTime"]);
     if (required) return sendJson(res, 400, { success: false, message: required.error });
-    if (!validPhone(body.phone)) return sendJson(res, 400, { success: false, message: "ტელეფონის ნომერი არასწორია" });
-    const appointment = createAppointmentRequest({
-      fullName: String(body.fullName || "").trim(),
-      phone: String(body.phone || "").trim(),
-      service: String(body.service || "").trim(),
-      doctor: String(body.doctor || "").trim(),
-      preferredDate: String(body.preferredDate || "").trim(),
-      preferredTime: String(body.preferredTime || "").trim(),
-      comment: String(body.comment || "").trim().slice(0, 500)
-    });
+    if (!validPhone(cleaned.phone)) return sendJson(res, 400, { success: false, message: "ტელეფონის ნომერი არასწორია" });
+    const appointment = createAppointmentRequest(cleaned);
     return sendJson(res, 201, { success: true, message: "ჩაწერის მოთხოვნა მიღებულია. ოპერატორი დაგიკავშირდებათ ვიზიტის დასადასტურებლად.", appointment });
   } catch (error) {
     return sendJson(res, 400, { success: false, message: error.message || "მოთხოვნის გაგზავნა ვერ მოხერხდა" });
@@ -332,6 +360,89 @@ function validateRequired(body, fields) {
   const missing = fields.filter((field) => !String(body[field] ?? "").trim());
   return missing.length ? { error: `შეავსეთ სავალდებულო ველები: ${missing.join(", ")}` } : null;
 }
+function cleanAppointmentInput(body) {
+  return {
+    fullName: limit(body.fullName, 120),
+    phone: limit(body.phone, 40),
+    service: limit(body.service, 120),
+    doctor: limit(body.doctor, 120),
+    preferredDate: limit(body.preferredDate, 40),
+    preferredTime: limit(body.preferredTime, 40),
+    comment: limit(body.comment, 1000)
+  };
+}
+
+function limit(value, max) {
+  return String(value || "").trim().slice(0, max);
+}
+
+function rateLimitAppointment(req) {
+  const key = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "local").split(",")[0].trim();
+  const now = Date.now();
+  const windowMs = 10 * 60 * 1000;
+  const bucket = appointmentBuckets.get(key) || [];
+  const recent = bucket.filter((time) => now - time < windowMs);
+  if (recent.length >= 8) {
+    appointmentBuckets.set(key, recent);
+    return false;
+  }
+  recent.push(now);
+  appointmentBuckets.set(key, recent);
+  return true;
+}
+
+function isAdminAuthenticated(req) {
+  if (!adminPassword) return false;
+  const token = parseCookies(req.headers.cookie || "").admin_session;
+  if (!token) return false;
+  const key = hashToken(token);
+  const expiresAt = adminSessions.get(key);
+  if (!expiresAt) return false;
+  if (expiresAt < Date.now()) {
+    adminSessions.delete(key);
+    return false;
+  }
+  return true;
+}
+
+function unauthorized(res) {
+  return sendJson(res, 401, { success: false, message: "ადმინზე წვდომისთვის საჭიროა ავტორიზაცია" });
+}
+
+function parseCookies(header) {
+  return Object.fromEntries(String(header || "").split(";").map((part) => {
+    const index = part.indexOf("=");
+    return index === -1 ? ["", ""] : [part.slice(0, index).trim(), decodeURIComponent(part.slice(index + 1).trim())];
+  }).filter(([key]) => key));
+}
+
+function setCookie(res, name, value, options = {}) {
+  const parts = [`${name}=${encodeURIComponent(value)}`];
+  if (options.maxAge !== undefined) parts.push(`Max-Age=${options.maxAge}`);
+  if (options.path) parts.push(`Path=${options.path}`);
+  if (options.httpOnly) parts.push("HttpOnly");
+  if (options.secure) parts.push("Secure");
+  if (options.sameSite) parts.push(`SameSite=${options.sameSite}`);
+  res.setHeader("Set-Cookie", parts.join("; "));
+}
+
+function hashToken(token) {
+  return createHash("sha256").update(token).digest("hex");
+}
+
+function safeEqual(a, b) {
+  const left = Buffer.from(a);
+  const right = Buffer.from(b);
+  return left.length === right.length && timingSafeEqual(left, right);
+}
+
+function cleanupAdminSessions() {
+  const now = Date.now();
+  for (const [key, expiresAt] of adminSessions.entries()) {
+    if (expiresAt < now) adminSessions.delete(key);
+  }
+}
+
 const validEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v));
 const validPhone = (v) => /^[+()0-9\s-]{6,}$/.test(String(v));
 async function readJson(req) {
