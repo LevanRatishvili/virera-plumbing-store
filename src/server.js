@@ -8,12 +8,14 @@ import {
   allBrands,
   allCategories,
   allContactMessages,
+  allAppointmentRequests,
   allCustomers,
   allOperatorRequests,
   allOrders,
   allProducts,
   adminProducts,
   createAdminProduct,
+  createAppointmentRequest,
   createContactMessage,
   createOperatorRequest,
   createOrder,
@@ -23,6 +25,7 @@ import {
   initDatabase,
   saveChatMessage,
   updateAdminProduct,
+  updateAppointmentStatus,
   updateOrderStatus,
   updateProductStock
 } from "./database.js";
@@ -58,12 +61,15 @@ createServer(async (req, res) => {
   } catch (error) {
     sendJson(res, 500, { error: "Server error", detail: error.message });
   }
-}).listen(port, () => console.log(`AquaPro Gori running at http://localhost:${port}`));
+}).listen(port, () => console.log(`Clinic site running at http://localhost:${port}`));
 
 async function handleApi(req, res, url) {
   const body = ["POST", "PATCH"].includes(req.method) ? await readJson(req) : {};
   if (req.method === "GET" && url.pathname === "/api/deployment") return sendJson(res, 200, deploymentInfo);
   if (req.method === "GET" && url.pathname === "/api/config") return sendJson(res, 200, storeConfig);
+  if (req.method === "POST" && url.pathname === "/api/appointments") return appointmentRoute(res, body);
+  if (req.method === "GET" && url.pathname === "/api/admin/appointments") return sendJson(res, 200, allAppointmentRequests(Object.fromEntries(url.searchParams)));
+  if (req.method === "PATCH" && url.pathname.match(/^\/api\/admin\/appointments\/\d+\/status$/)) return appointmentStatusRoute(res, Number(url.pathname.split("/")[4]), body);
   if (req.method === "GET" && url.pathname === "/api/admin/products") return sendJson(res, 200, adminProducts(Object.fromEntries(url.searchParams)));
   if (req.method === "POST" && url.pathname === "/api/admin/products") return adminCreateProductRoute(res, body);
   if (req.method === "POST" && url.pathname === "/api/admin/products/import") return adminImportProductsRoute(res, body);
@@ -177,6 +183,35 @@ function adminImportProductsRoute(res, body) {
     sendJson(res, 200, result);
   } catch (error) {
     sendJson(res, 400, { error: error.message, created: 0, updated: 0, skipped: 0, errors: [{ row: 0, sku: "", message: error.message }] });
+  }
+}
+
+function appointmentRoute(res, body) {
+  try {
+    const required = validateRequired(body, ["fullName", "phone", "service", "preferredDate", "preferredTime"]);
+    if (required) return sendJson(res, 400, { success: false, message: required.error });
+    if (!validPhone(body.phone)) return sendJson(res, 400, { success: false, message: "ტელეფონის ნომერი არასწორია" });
+    const appointment = createAppointmentRequest({
+      fullName: String(body.fullName || "").trim(),
+      phone: String(body.phone || "").trim(),
+      service: String(body.service || "").trim(),
+      doctor: String(body.doctor || "").trim(),
+      preferredDate: String(body.preferredDate || "").trim(),
+      preferredTime: String(body.preferredTime || "").trim(),
+      comment: String(body.comment || "").trim().slice(0, 500)
+    });
+    return sendJson(res, 201, { success: true, message: "ჩაწერის მოთხოვნა მიღებულია. ოპერატორი დაგიკავშირდებათ ვიზიტის დასადასტურებლად.", appointment });
+  } catch (error) {
+    return sendJson(res, 400, { success: false, message: error.message || "მოთხოვნის გაგზავნა ვერ მოხერხდა" });
+  }
+}
+
+function appointmentStatusRoute(res, id, body) {
+  try {
+    const appointment = updateAppointmentStatus(id, String(body.status || "").trim());
+    return appointment ? sendJson(res, 200, { success: true, appointment }) : sendJson(res, 404, { success: false, message: "ჩაწერის მოთხოვნა ვერ მოიძებნა" });
+  } catch (error) {
+    return sendJson(res, 400, { success: false, message: error.message || "სტატუსის განახლება ვერ მოხერხდა" });
   }
 }
 

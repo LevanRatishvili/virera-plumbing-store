@@ -80,6 +80,19 @@ export function initDatabase() {
       status TEXT NOT NULL DEFAULT 'new',
       createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
+    CREATE TABLE IF NOT EXISTS appointment_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      full_name TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      service TEXT NOT NULL,
+      doctor TEXT,
+      preferred_date TEXT NOT NULL,
+      preferred_time TEXT NOT NULL,
+      comment TEXT,
+      status TEXT NOT NULL DEFAULT 'new',
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
     CREATE TABLE IF NOT EXISTS chat_messages (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       sessionId TEXT NOT NULL,
@@ -525,6 +538,44 @@ export function createOperatorRequest(data) {
   return db.prepare("SELECT * FROM operator_requests WHERE id = ?").get(result.lastInsertRowid);
 }
 export const allOperatorRequests = () => db.prepare("SELECT * FROM operator_requests ORDER BY createdAt DESC").all();
+const appointmentStatuses = new Set(["new", "contacted", "confirmed", "cancelled", "completed"]);
+const mapAppointment = (row) => ({
+  id: row.id,
+  fullName: row.full_name,
+  phone: row.phone,
+  service: row.service,
+  doctor: row.doctor || "",
+  preferredDate: row.preferred_date,
+  preferredTime: row.preferred_time,
+  comment: row.comment || "",
+  status: row.status,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at
+});
+export function createAppointmentRequest(data) {
+  const result = db.prepare(`
+    INSERT INTO appointment_requests (full_name, phone, service, doctor, preferred_date, preferred_time, comment, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 'new')
+  `).run(data.fullName, data.phone, data.service, data.doctor || "", data.preferredDate, data.preferredTime, data.comment || "");
+  return mapAppointment(db.prepare("SELECT * FROM appointment_requests WHERE id = ?").get(result.lastInsertRowid));
+}
+export function allAppointmentRequests(filters = {}) {
+  const q = String(filters.q || "").trim().toLowerCase();
+  const status = String(filters.status || "").trim();
+  const service = String(filters.service || "").trim().toLowerCase();
+  return db.prepare("SELECT * FROM appointment_requests ORDER BY created_at DESC").all().map(mapAppointment).filter((item) => {
+    const matchesQ = !q || `${item.fullName} ${item.phone}`.toLowerCase().includes(q);
+    const matchesStatus = !status || item.status === status;
+    const matchesService = !service || item.service.toLowerCase().includes(service);
+    return matchesQ && matchesStatus && matchesService;
+  });
+}
+export function updateAppointmentStatus(id, status) {
+  if (!appointmentStatuses.has(status)) throw new Error("სტატუსი არასწორია");
+  db.prepare("UPDATE appointment_requests SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(status, Number(id));
+  const row = db.prepare("SELECT * FROM appointment_requests WHERE id = ?").get(Number(id));
+  return row ? mapAppointment(row) : null;
+}
 export function saveChatMessage(sessionId, role, content, needsOperator = false) {
   db.prepare("INSERT INTO chat_messages (sessionId, role, content, needsOperator) VALUES (?, ?, ?, ?)").run(sessionId, role, content, needsOperator ? 1 : 0);
 }

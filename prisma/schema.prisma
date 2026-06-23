@@ -98,6 +98,22 @@ model OperatorRequest {
   @@map("operator_requests")
 }
 
+model AppointmentRequest {
+  id            Int      @id @default(autoincrement())
+  fullName      String   @map("full_name")
+  phone         String
+  service       String
+  doctor        String?
+  preferredDate String   @map("preferred_date")
+  preferredTime String   @map("preferred_time")
+  comment       String?
+  status        String   @default("new")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@map("appointment_requests")
+}
+
 model ChatMessage {
   id            Int      @id @default(autoincrement())
   sessionId     String

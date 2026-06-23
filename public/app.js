@@ -23,13 +23,43 @@ const benefits = [
   ["ინდივიდუალური მიდგომა", "ყოველი ვიზიტი იგეგმება პაციენტის საჭიროებისა და დროის გათვალისწინებით."]
 ];
 
+const statusLabels = {
+  new: "ახალი",
+  contacted: "დაკავშირებული",
+  confirmed: "დადასტურებული",
+  cancelled: "გაუქმებული",
+  completed: "დასრულებული"
+};
+
 const app = document.querySelector("#app");
+
+function api(path, options = {}) {
+  return fetch(path, {
+    method: options.method || "GET",
+    headers: options.body ? { "Content-Type": "application/json" } : {},
+    body: options.body ? JSON.stringify(options.body) : undefined
+  }).then(async (response) => {
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.message || data.error || "მოთხოვნა ვერ შესრულდა");
+    return data;
+  });
+}
 
 function icon(label) {
   return `<span class="icon" aria-hidden="true">${label}</span>`;
 }
 
+function isAdminRoute() {
+  return location.pathname === "/admin" || location.hash === "#/admin";
+}
+
 function render() {
+  if (isAdminRoute()) renderAdmin();
+  else renderClinic();
+}
+
+function renderClinic() {
+  document.title = "მედ ამბულატორია";
   app.innerHTML = `
     <header class="site-header">
       <div class="container header-grid">
@@ -137,12 +167,12 @@ function render() {
             <div class="privacy-note">ფორმა არ ითხოვს დიაგნოზს, პირად ნომერს, სამედიცინო ისტორიას ან ანალიზის ფაილებს.</div>
           </div>
           <form id="appointmentForm" class="appointment-form">
-            <label>სახელი და გვარი<input name="name" required autocomplete="name"></label>
+            <label>სახელი და გვარი<input name="fullName" required autocomplete="name"></label>
             <label>ტელეფონი<input name="phone" required autocomplete="tel"></label>
             <label>სერვისი<select name="service" required>${services.map(([title]) => `<option>${title}</option>`).join("")}</select></label>
             <label>ექიმი<select name="doctor"><option value="">ნებისმიერი ხელმისაწვდომი ექიმი</option>${doctors.map(([name]) => `<option>${name}</option>`).join("")}</select></label>
-            <label>სასურველი თარიღი<input name="date" type="date" required></label>
-            <label>სასურველი დრო<input name="time" type="time" required></label>
+            <label>სასურველი თარიღი<input name="preferredDate" type="date" required></label>
+            <label>სასურველი დრო<input name="preferredTime" type="time" required></label>
             <label class="wide">კომენტარი<textarea name="comment" maxlength="500" placeholder="არ მიუთითოთ დიაგნოზი ან მგრძნობიარე სამედიცინო ინფორმაცია"></textarea></label>
             <button class="btn wide" type="submit">მოთხოვნის გაგზავნა</button>
             <div id="formStatus" class="form-status" aria-live="polite"></div>
@@ -200,13 +230,126 @@ function bindClinicUi() {
     });
   });
 
-  document.querySelector("#appointmentForm").addEventListener("submit", (event) => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const status = document.querySelector("#formStatus");
-    status.textContent = "მოთხოვნა მიღებულია. ოპერატორი დაგიკავშირდებათ ვიზიტის დასადასტურებლად.";
+  document.querySelector("#appointmentForm").addEventListener("submit", submitAppointment);
+}
+
+async function submitAppointment(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const button = form.querySelector("button[type='submit']");
+  const status = document.querySelector("#formStatus");
+  const body = Object.fromEntries(new FormData(form));
+  button.disabled = true;
+  button.textContent = "იგზავნება...";
+  status.className = "form-status";
+  status.textContent = "";
+  try {
+    const result = await api("/api/appointments", { method: "POST", body });
+    status.classList.add("success-text");
+    status.textContent = result.message || "ჩაწერის მოთხოვნა მიღებულია";
     form.reset();
+  } catch (error) {
+    status.classList.add("error-text");
+    status.textContent = error.message;
+  } finally {
+    button.disabled = false;
+    button.textContent = "მოთხოვნის გაგზავნა";
+  }
+}
+
+function renderAdmin() {
+  document.title = "ჩაწერის მოთხოვნები | მედ ამბულატორია";
+  app.innerHTML = `
+    <main class="admin-page">
+      <section class="admin-shell">
+        <div class="admin-head">
+          <div>
+            <span class="eyebrow">ადმინი</span>
+            <h1>ჩაწერის მოთხოვნები</h1>
+            <p>მინიმალური ამბულატორიული ჩაწერის მოთხოვნები. აქ არ ინახება დიაგნოზი, პირადი ნომერი, ისტორია ან ფაილები.</p>
+          </div>
+          <a class="btn ghost compact" href="/">საიტზე დაბრუნება</a>
+        </div>
+        <div class="admin-filters">
+          <input id="adminSearch" placeholder="სახელი ან ტელეფონი">
+          <select id="adminStatus">
+            <option value="">ყველა სტატუსი</option>
+            ${Object.entries(statusLabels).map(([value, label]) => `<option value="${value}">${label}</option>`).join("")}
+          </select>
+          <select id="adminService">
+            <option value="">ყველა სერვისი</option>
+            ${services.map(([title]) => `<option>${title}</option>`).join("")}
+          </select>
+          <button class="btn compact" id="adminApply">ფილტრაცია</button>
+        </div>
+        <div id="adminStatusText" class="admin-status-text"></div>
+        <div id="appointmentsTable"></div>
+      </section>
+    </main>
+  `;
+  bindAdmin();
+  loadAppointments();
+}
+
+function bindAdmin() {
+  document.querySelector("#adminApply").addEventListener("click", loadAppointments);
+  document.querySelector("#adminSearch").addEventListener("keydown", (event) => {
+    if (event.key === "Enter") loadAppointments();
   });
 }
 
+async function loadAppointments() {
+  const params = new URLSearchParams();
+  const q = document.querySelector("#adminSearch")?.value.trim();
+  const status = document.querySelector("#adminStatus")?.value;
+  const service = document.querySelector("#adminService")?.value;
+  if (q) params.set("q", q);
+  if (status) params.set("status", status);
+  if (service) params.set("service", service);
+  const target = document.querySelector("#appointmentsTable");
+  document.querySelector("#adminStatusText").textContent = "იტვირთება...";
+  try {
+    const rows = await api(`/api/admin/appointments${params.toString() ? `?${params}` : ""}`);
+    document.querySelector("#adminStatusText").textContent = `${rows.length} მოთხოვნა`;
+    target.innerHTML = appointmentTable(rows);
+    target.querySelectorAll("[data-status-id]").forEach((select) => {
+      select.addEventListener("change", () => updateStatus(select.dataset.statusId, select.value));
+    });
+  } catch (error) {
+    document.querySelector("#adminStatusText").textContent = error.message;
+    target.innerHTML = "";
+  }
+}
+
+function appointmentTable(rows) {
+  if (!rows.length) return `<div class="empty-state">ჩაწერის მოთხოვნები ჯერ არ არის</div>`;
+  return `<div class="admin-table-wrap"><table class="admin-table">
+    <thead><tr><th>პაციენტი</th><th>სერვისი</th><th>თარიღი/დრო</th><th>კომენტარი</th><th>სტატუსი</th><th>შექმნა</th></tr></thead>
+    <tbody>${rows.map((row) => `<tr>
+      <td data-label="პაციენტი"><b>${escapeHtml(row.fullName)}</b><br><a href="tel:${escapeHtml(row.phone)}">${escapeHtml(row.phone)}</a></td>
+      <td data-label="სერვისი">${escapeHtml(row.service)}${row.doctor ? `<br><small>${escapeHtml(row.doctor)}</small>` : ""}</td>
+      <td data-label="თარიღი/დრო">${escapeHtml(row.preferredDate)}<br><small>${escapeHtml(row.preferredTime)}</small></td>
+      <td data-label="კომენტარი">${escapeHtml(row.comment || "—")}</td>
+      <td data-label="სტატუსი"><select data-status-id="${row.id}">${Object.entries(statusLabels).map(([value, label]) => `<option value="${value}" ${row.status === value ? "selected" : ""}>${label}</option>`).join("")}</select></td>
+      <td data-label="შექმნა">${escapeHtml(row.createdAt)}</td>
+    </tr>`).join("")}</tbody>
+  </table></div>`;
+}
+
+async function updateStatus(id, status) {
+  const text = document.querySelector("#adminStatusText");
+  try {
+    await api(`/api/admin/appointments/${id}/status`, { method: "PATCH", body: { status } });
+    text.textContent = "სტატუსი განახლდა";
+    setTimeout(loadAppointments, 250);
+  } catch (error) {
+    text.textContent = error.message;
+  }
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+}
+
+window.addEventListener("hashchange", render);
 render();
