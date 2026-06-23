@@ -103,6 +103,7 @@ export function initDatabase() {
     );
   `);
   migrateProductsTable();
+  cleanupSmokeAppointmentRequests();
 
   const count = db.prepare("SELECT COUNT(*) AS count FROM categories").get().count;
   if (count === 0) seed();
@@ -120,6 +121,22 @@ function migrateProductsTable() {
   db.exec("UPDATE products SET updatedAt = CURRENT_TIMESTAMP WHERE updatedAt = ''");
   const orderColumns = db.prepare("PRAGMA table_info(orders)").all().map((column) => column.name);
   if (!orderColumns.includes("comment")) db.exec("ALTER TABLE orders ADD COLUMN comment TEXT NOT NULL DEFAULT ''");
+}
+
+function cleanupSmokeAppointmentRequests() {
+  db.prepare(`
+    DELETE FROM appointment_requests
+    WHERE lower(full_name) LIKE '%smoke%'
+       OR lower(full_name) LIKE '%codex%'
+       OR lower(full_name) LIKE '%goal 5%'
+       OR lower(full_name) LIKE '%goal 6%'
+       OR lower(full_name) LIKE '%goal 7%'
+       OR lower(full_name) LIKE 'local test%'
+       OR lower(comment) LIKE '%smoke test%'
+       OR lower(comment) LIKE 'local test%'
+       OR lower(comment) LIKE '%admin route verification%'
+       OR lower(comment) LIKE '%codex%'
+  `).run();
 }
 
 function seed() {

@@ -129,7 +129,7 @@ function renderClinic() {
             <a class="text-link" href="#appointment">აირჩიეთ სერვისი და დაჯავშნეთ ვიზიტი</a>
           </div>
           <div class="service-grid">
-            ${services.map(([title, text, price]) => `<article class="service-card"><div>${icon("+")}<span>${price}</span></div><h3>${title}</h3><p>${text}</p><a href="#appointment" data-service="${title}">ვიზიტის დაჯავშნა</a></article>`).join("")}
+            ${services.map(([title, text, price]) => `<article class="service-card"><div>${icon("+")}<span>საწყისი ფასი: ${price}</span></div><h3>${title}</h3><p>${text}</p><a href="#appointment" data-service="${title}">ვიზიტის დაჯავშნა</a></article>`).join("")}
           </div>
         </div>
       </section>
@@ -139,6 +139,7 @@ function renderClinic() {
           <div class="section-head">
             <span class="eyebrow">ექიმები</span>
             <h2>სპეციალისტების პირველი გუნდი</h2>
+            <p>დემო პროფილებია პრეზენტაციისთვის; რეალური ექიმების მონაცემები მარტივად ჩანაცვლდება.</p>
           </div>
           <div class="doctor-grid">
             ${doctors.map(([name, specialty, experience], index) => `<article class="doctor-card"><div class="doctor-photo">${["ნმ","გქ","თლ","მბ"][index]}</div><h3>${name}</h3><p>${specialty}</p><span>${experience}</span><a class="btn ghost" href="#appointment" data-doctor="${name}">დაჯავშნა</a></article>`).join("")}
@@ -154,7 +155,7 @@ function renderClinic() {
             <p>ფასები მითითებულია საწყისი კონსულტაციისთვის. საბოლოო ღირებულება დამოკიდებულია საჭირო კვლევასა და ექიმის რეკომენდაციაზე.</p>
           </div>
           <div class="price-list">
-            ${services.slice(0, 6).map(([title, , price]) => `<div><span>${title}</span><b>${price}</b></div>`).join("")}
+            ${services.slice(0, 6).map(([title, , price]) => `<div><span>${title}</span><b>საწყისი ფასი: ${price}</b></div>`).join("")}
           </div>
         </div>
       </section>
@@ -176,6 +177,7 @@ function renderClinic() {
             <label>სასურველი თარიღი<input name="preferredDate" type="date" required></label>
             <label>სასურველი დრო<input name="preferredTime" type="time" required></label>
             <label class="wide">კომენტარი<textarea name="comment" maxlength="500" placeholder="არ მიუთითოთ დიაგნოზი ან მგრძნობიარე სამედიცინო ინფორმაცია"></textarea></label>
+            <p class="consent-note wide">გაგზავნით ადასტურებთ, რომ საკონტაქტო მონაცემები გამოიყენება მხოლოდ ვიზიტის მოთხოვნაზე პასუხისთვის.</p>
             <button class="btn wide" type="submit">მოთხოვნის გაგზავნა</button>
             <div id="formStatus" class="form-status" aria-live="polite"></div>
           </form>

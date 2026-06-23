@@ -75,7 +75,7 @@ createServer(async (req, res) => {
 
 async function handleApi(req, res, url) {
   const body = ["POST", "PATCH"].includes(req.method) ? await readJson(req) : {};
-  if (req.method === "GET" && url.pathname === "/api/deployment") return sendJson(res, 200, deploymentInfo);
+  if (req.method === "GET" && url.pathname === "/api/deployment") return sendDeploymentJson(res);
   if (req.method === "GET" && url.pathname === "/api/config") return sendJson(res, 200, storeConfig);
   if (req.method === "GET" && url.pathname === "/api/admin/session") return adminSessionRoute(req, res);
   if (req.method === "POST" && url.pathname === "/api/admin/login") return adminLoginRoute(req, res, body);
@@ -503,4 +503,15 @@ async function serveStatic(res, pathname, method = "GET") {
 function sendJson(res, status, payload) {
   res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
   res.end(JSON.stringify(payload));
+}
+
+function sendDeploymentJson(res) {
+  res.writeHead(200, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+    "Pragma": "no-cache",
+    "Expires": "0",
+    "Surrogate-Control": "no-store"
+  });
+  res.end(JSON.stringify(deploymentInfo));
 }

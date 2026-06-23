@@ -8,8 +8,8 @@
   --blue: #1f84d8;
   --teal: #16a3a3;
   --teal-dark: #0b7678;
-  --shadow: 0 24px 70px rgba(31, 132, 216, .14);
-  --radius: 18px;
+  --shadow: 0 22px 60px rgba(31, 132, 216, .13);
+  --radius: 8px;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -18,10 +18,7 @@ html { scroll-behavior: smooth; }
 body {
   margin: 0;
   color: var(--text);
-  background:
-    radial-gradient(circle at 12% -8%, rgba(31,132,216,.14), transparent 32rem),
-    radial-gradient(circle at 90% 8%, rgba(22,163,163,.12), transparent 30rem),
-    linear-gradient(180deg, #fbfdff 0%, var(--bg) 54%, #eef9fb 100%);
+  background: linear-gradient(180deg, #fbfdff 0%, var(--bg) 54%, #eef9fb 100%);
   line-height: 1.6;
 }
 
@@ -121,6 +118,7 @@ h1 {
 }
 h2 { font-size: clamp(28px, 4vw, 44px); line-height: 1.12; margin-bottom: 14px; }
 h3 { font-size: 20px; margin-bottom: 8px; }
+h1, h2, h3, p, a, span, b { overflow-wrap: anywhere; }
 .hero-copy p { color: var(--muted); font-size: 18px; max-width: 620px; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 26px 0; }
 .hero-stats {
@@ -139,7 +137,7 @@ h3 { font-size: 20px; margin-bottom: 8px; }
 .hero-stats b { display: block; color: var(--text); font-size: 23px; }
 .hero-visual {
   position: relative;
-  border-radius: 32px;
+  border-radius: 8px;
   overflow: hidden;
   box-shadow: var(--shadow);
   border: 1px solid white;
@@ -164,7 +162,7 @@ h3 { font-size: 20px; margin-bottom: 8px; }
 .visit-card b, .visit-card span { display: block; }
 .visit-card span { color: var(--muted); }
 
-.section { padding: 72px 0; }
+.section { padding: 78px 0; }
 .section-head {
   max-width: 720px;
   margin-bottom: 26px;
@@ -189,13 +187,13 @@ h3 { font-size: 20px; margin-bottom: 8px; }
   border-radius: var(--radius);
   box-shadow: 0 16px 44px rgba(31,132,216,.08);
 }
-.benefit-grid article, .service-card, .doctor-card { padding: 22px; }
+.benefit-grid article, .service-card, .doctor-card { padding: 24px; }
 .icon {
   width: 42px;
   height: 42px;
   display: grid;
   place-items: center;
-  border-radius: 14px;
+  border-radius: 8px;
   background: var(--surface-soft);
   color: var(--teal-dark);
   font-weight: 950;
@@ -204,6 +202,10 @@ h3 { font-size: 20px; margin-bottom: 8px; }
 .benefit-grid p, .service-card p, .doctor-card p, .prices p, .appointment p, .site-footer p { color: var(--muted); }
 .service-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .service-card { display: grid; gap: 8px; }
+.service-card:hover, .doctor-card:hover, .benefit-grid article:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 54px rgba(31,132,216,.12);
+}
 .service-card div:first-child {
   display: flex;
   align-items: start;
@@ -212,7 +214,7 @@ h3 { font-size: 20px; margin-bottom: 8px; }
 }
 .service-card div:first-child span { color: var(--blue); font-weight: 900; }
 .service-card a { color: var(--teal-dark); font-weight: 900; margin-top: 8px; }
-.doctors { background: rgba(255,255,255,.48); border-block: 1px solid var(--line); }
+.doctors { background: #ffffff; border-block: 1px solid var(--line); }
 .doctor-card { text-align: center; display: grid; justify-items: center; gap: 8px; }
 .doctor-photo {
   width: 96px;
@@ -233,16 +235,18 @@ h3 { font-size: 20px; margin-bottom: 8px; }
   gap: 28px;
   align-items: start;
 }
+.prices-grid > *, .appointment-grid > *, .contact-grid > * { min-width: 0; }
 .price-list { padding: 10px; display: grid; gap: 4px; }
 .price-list div {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 12px;
   padding: 14px;
-  border-radius: 14px;
+  border-radius: 8px;
   background: #f7fcff;
 }
-.price-list b { color: var(--teal-dark); white-space: nowrap; }
+.price-list b { color: var(--teal-dark); }
 
 .appointment {
   background: linear-gradient(135deg, rgba(31,132,216,.08), rgba(22,163,163,.08));
@@ -256,6 +260,15 @@ h3 { font-size: 20px; margin-bottom: 8px; }
   color: var(--teal-dark);
   font-weight: 850;
 }
+.consent-note {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: #f7fcff;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 750;
+}
 .appointment-form {
   padding: 22px;
   display: grid;
@@ -266,7 +279,7 @@ label { display: grid; gap: 7px; color: var(--text); font-weight: 850; }
 input, select, textarea {
   width: 100%;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: 8px;
   padding: 12px 13px;
   background: #fbfdff;
   color: var(--text);
