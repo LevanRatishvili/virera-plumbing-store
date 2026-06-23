@@ -3,7 +3,7 @@ services:
     name: virera-plumbing-store
     runtime: node
     plan: starter
-    buildCommand: npm install
+    buildCommand: npm install && npm run build:metadata
     startCommand: npm start
     envVars:
       - key: NODE_VERSION

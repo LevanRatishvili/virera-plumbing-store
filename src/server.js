@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { extname, join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { storeConfig } from "./config.js";
@@ -35,6 +35,7 @@ import {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir = join(__dirname, "..", "public");
 const indexPath = join(publicDir, "index.html");
+const buildInfoPath = join(__dirname, "..", ".build-info.json");
 const port = Number(process.env.PORT || 3000);
 const openAiApiKey = process.env.OPENAI_API_KEY || "";
 const openAiModel = process.env.OPENAI_MODEL || "gpt-5-mini";
@@ -42,9 +43,14 @@ const adminPassword = process.env.ADMIN_PASSWORD || (process.env.NODE_ENV === "p
 const secureAdminCookie = process.env.NODE_ENV === "production";
 const adminSessions = new Map();
 const appointmentBuckets = new Map();
+const buildInfo = readBuildInfo();
 const deploymentInfo = {
-  commit: process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || "local",
-  branch: process.env.RENDER_GIT_BRANCH || process.env.GIT_BRANCH || "local",
+  commit: buildInfo.commit || process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || "local",
+  branch: buildInfo.branch || process.env.RENDER_GIT_BRANCH || process.env.GIT_BRANCH || "local",
+  version: buildInfo.version || "1.0.0",
+  buildTime: buildInfo.buildTime || "",
+  renderCommit: process.env.RENDER_GIT_COMMIT || "",
+  renderBranch: process.env.RENDER_GIT_BRANCH || "",
   service: process.env.RENDER_SERVICE_NAME || "local",
   deployedAt: process.env.RENDER_DEPLOYED_AT || "",
   environment: process.env.NODE_ENV || "development"
@@ -77,6 +83,7 @@ createServer(async (req, res) => {
 async function handleApi(req, res, url) {
   const body = ["POST", "PATCH"].includes(req.method) ? await readJson(req) : {};
   if (req.method === "GET" && url.pathname === "/api/deployment") return sendDeploymentJson(res);
+  if (req.method === "GET" && url.pathname === "/api/health") return sendNoStoreJson(res, 200, { ok: true, ...deploymentInfo });
   if (req.method === "GET" && url.pathname === "/api/config") return sendJson(res, 200, storeConfig);
   if (req.method === "GET" && url.pathname === "/api/admin/session") return adminSessionRoute(req, res);
   if (req.method === "POST" && url.pathname === "/api/admin/login") return adminLoginRoute(req, res, body);
@@ -468,7 +475,7 @@ async function serveAdminShell(res, method = "GET") {
   const headers = { "Content-Type": mimeTypes[".html"], "Cache-Control": "no-cache" };
   res.writeHead(200, headers);
   if (method === "HEAD") return res.end();
-  res.end(await readFile(indexPath));
+  res.end(injectBuildMarkers(await readFile(indexPath, "utf8")));
 }
 
 function serveAdminFallback(res) {
@@ -500,6 +507,7 @@ async function serveStatic(res, pathname, method = "GET") {
   if ([".css", ".js", ".html"].includes(ext)) headers["Cache-Control"] = "no-cache";
   res.writeHead(200, headers);
   if (method === "HEAD") return res.end();
+  if (filePath === indexPath) return res.end(injectBuildMarkers(await readFile(filePath, "utf8")));
   res.end(await readFile(filePath));
 }
 function sendJson(res, status, payload) {
@@ -508,12 +516,35 @@ function sendJson(res, status, payload) {
 }
 
 function sendDeploymentJson(res) {
-  res.writeHead(200, {
+  return sendNoStoreJson(res, 200, deploymentInfo);
+}
+
+function sendNoStoreJson(res, status, payload) {
+  res.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
     "Pragma": "no-cache",
     "Expires": "0",
     "Surrogate-Control": "no-store"
   });
-  res.end(JSON.stringify(deploymentInfo));
+  res.end(JSON.stringify(payload));
+}
+
+function injectBuildMarkers(html) {
+  return String(html)
+    .replaceAll("__BUILD_COMMIT__", escapeHtmlAttr(deploymentInfo.commit))
+    .replaceAll("__BUILD_VERSION__", escapeHtmlAttr(deploymentInfo.version))
+    .replaceAll("__BUILD_TIME__", escapeHtmlAttr(deploymentInfo.buildTime));
+}
+
+function readBuildInfo() {
+  try {
+    return JSON.parse(readFileSync(buildInfoPath, "utf8"));
+  } catch {
+    return {};
+  }
+}
+
+function escapeHtmlAttr(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
 }

@@ -9,6 +9,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
+    "build:metadata": "node scripts/write-build-info.mjs",
     "check": "node --check src/server.js && node --check public/app.js",
     "deploy:render": "node scripts/trigger-render-deploy.mjs",
     "push:main": "node scripts/push-main-and-deploy.mjs",
