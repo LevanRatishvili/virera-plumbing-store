@@ -949,10 +949,10 @@ function renderContentEditor() {
         textField("კომენტარის მინიშნება", "consentText.commentPlaceholder")
       ].join(""), "მოკლე განმარტებები ფორმასთან და გვერდის ქვედა ნაწილში.", "footer-consent")}
     </div>
-    ${listSection("heroSlides", "სლაიდერი", "სლაიდის დამატება", ["title", "text", "image", "tone"], ["სათაური", "აღწერა", "ფოტო", "ტონი"], "მთავარი გვერდის ზედა ფოტოები და მოკლე ტექსტები.", true)}
-    ${listSection("services", "სერვისები", "სერვისის დამატება", ["title", "description", "price"], ["სათაური", "აღწერა", "ფასი"], "საჯარო გვერდზე ნაჩვენები სერვისების სია.")}
-    ${listSection("doctors", "ექიმები", "ექიმის დამატება", ["name", "specialty", "note", "image"], ["სახელი", "სპეციალობა", "შენიშვნა", "ფოტო"], "ექიმების სამუშაო პროფილები; რეალური მონაცემები მხოლოდ დადასტურების შემდეგ შეიყვანეთ.")}
-    ${listSection("prices", "ფასები", "ფასის დამატება", ["title", "price"], ["სათაური", "ფასი"], "საწყისი ფასების მოკლე სია.")}
+    ${listSection("heroSlides", "სლაიდერი", "სლაიდის დამატება", ["title", "text", "image"], ["მოკლე სათაური", "ვრცელი აღწერა", "ფოტო"], "მთავარი გვერდის ზედა ფოტოები და მოკლე ტექსტები.", true)}
+    ${listSection("services", "სერვისები", "სერვისის დამატება", ["title", "description", "price"], ["სერვისის სახელი", "მოკლე აღწერა", "ფასი"], "საჯარო გვერდზე ნაჩვენები სერვისების სია.")}
+    ${listSection("doctors", "ექიმები", "ექიმის დამატება", ["name", "specialty", "note", "image"], ["სახელი", "სპეციალობა", "აღწერა / ბიო", "ფოტო"], "ექიმების სამუშაო პროფილები; რეალური მონაცემები მხოლოდ დადასტურების შემდეგ შეიყვანეთ.")}
+    ${listSection("prices", "ფასები", "ფასის დამატება", ["title", "price"], ["სერვისი", "ფასი"], "საწყისი ფასების მოკლე სია.")}
   `;
   editor.querySelectorAll("[data-content-path]").forEach((field) => {
     field.addEventListener("input", () => setContentPath(field.dataset.contentPath, field.value));
@@ -988,11 +988,11 @@ function sectionResetButton(section, label) {
 }
 
 function inputField(label, path) {
-  return `<label>${escapeHtml(label)}<input data-content-path="${escapeHtml(path)}" value="${escapeHtml(getContentPath(path))}"></label>`;
+  return `<label class="content-field field-compact"><span>${escapeHtml(label)}</span><input data-content-path="${escapeHtml(path)}" value="${escapeHtml(getContentPath(path))}"></label>`;
 }
 
 function textField(label, path) {
-  return `<label>${escapeHtml(label)}<textarea data-content-path="${escapeHtml(path)}">${escapeHtml(getContentPath(path))}</textarea></label>`;
+  return `<label class="content-field field-wide"><span>${escapeHtml(label)}</span><textarea data-content-path="${escapeHtml(path)}">${escapeHtml(getContentPath(path))}</textarea></label>`;
 }
 
 function listSection(section, title, addLabel, fields, labels, helper = "", open = false) {
@@ -1004,7 +1004,7 @@ function listSection(section, title, addLabel, fields, labels, helper = "", open
       <button class="btn ghost compact" type="button" data-content-action="add" data-section="${section}">${escapeHtml(addLabel)}</button>
     </div>
     <div class="content-list">
-      ${items.map((item, index) => `<article class="content-item">
+      ${items.map((item, index) => `<article class="content-item content-item-${escapeHtml(section)}">
         <div class="content-item-head">
           <strong>${escapeHtml(item.title || item.name || `${title} ${index + 1}`)}</strong>
           <div class="content-mini-actions">
@@ -1016,8 +1016,7 @@ function listSection(section, title, addLabel, fields, labels, helper = "", open
         <div class="content-fields">
           ${fields.map((field, fieldIndex) => {
             const path = `${section}.${index}.${field}`;
-            if (field === "image") return imageField(labels[fieldIndex], path, item[field] || "");
-            return `<label>${escapeHtml(labels[fieldIndex])}<input data-content-path="${escapeHtml(path)}" value="${escapeHtml(item[field] || "")}"></label>`;
+            return contentListField(section, field, labels[fieldIndex], path, item[field] || "");
           }).join("")}
         </div>
       </article>`).join("")}
@@ -1025,10 +1024,36 @@ function listSection(section, title, addLabel, fields, labels, helper = "", open
   </details>`;
 }
 
-function imageField(label, path, value) {
+function contentListField(section, field, label, path, value) {
+  if (field === "image") return imageField(label, path, value, section);
+  const longField = field === "text" || field === "description" || field === "note";
+  const helper = fieldHelper(section, field);
+  const className = longField ? "field-wide field-long" : field === "price" ? "field-compact" : "field-medium";
+  const control = longField
+    ? `<textarea data-content-path="${escapeHtml(path)}">${escapeHtml(value)}</textarea>`
+    : `<input data-content-path="${escapeHtml(path)}" value="${escapeHtml(value)}">`;
+  return `<label class="content-field ${className}">
+    <span>${escapeHtml(label)}</span>
+    ${helper ? `<small>${escapeHtml(helper)}</small>` : ""}
+    ${control}
+  </label>`;
+}
+
+function fieldHelper(section, field) {
+  if (section === "heroSlides" && field === "title") return "მოკლედ, ერთი ხაზი";
+  if (section === "heroSlides" && field === "text") return "ფოტოს ქვემოთ გამოჩნდება სლაიდერში";
+  if (section === "services" && field === "description") return "ორი-სამი მოკლე წინადადება სერვისის შესახებ";
+  if (section === "doctors" && field === "note") return "მოკლე ბიო ან სამუშაო პროფილის აღწერა";
+  if (section === "prices" && field === "price") return "მაგ. საწყისი ფასი ან დასაზუსტებელია";
+  return "";
+}
+
+function imageField(label, path, value, section = "") {
   const selected = assetMeta(value);
-  return `<div class="asset-field">
+  const helper = section === "heroSlides" ? "ფოტო გამოჩნდება სლაიდერში" : "ფოტო გამოჩნდება ბარათზე";
+  return `<div class="asset-field asset-field-${escapeHtml(section)}">
     <span class="field-label">${escapeHtml(label)}</span>
+    <small>${escapeHtml(helper)}</small>
     <span class="asset-picker">
       ${value ? `<img class="asset-preview" src="${escapeHtml(value)}" alt="${escapeHtml(selected.label)}">` : `<span class="asset-preview empty">ფოტო არ არის არჩეული</span>`}
       <select data-asset-select="${escapeHtml(path)}">
@@ -1037,6 +1062,7 @@ function imageField(label, path, value) {
       </select>
       <details class="advanced-path">
         <summary>ტექნიკური path</summary>
+        <small>გამოიყენეთ მხოლოდ საჭიროებისას</small>
         <input data-content-path="${escapeHtml(path)}" value="${escapeHtml(value)}" placeholder="/assets/photo.png">
       </details>
     </span>
