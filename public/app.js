@@ -73,18 +73,16 @@ const clinicContent = {
       text: "დემო ფოტო რეალური კლინიკის სურათით ჩანაცვლდება.",
       image: "/assets/clinic-hero.png",
       tone: "consultation"
+    }
+  ],
+  heroHighlights: [
+    {
+      title: "ორგანიზებული მიღება",
+      text: "დემო ბლოკი რეალური მისაღების ფოტოსა და დეტალებით ჩანაცვლდება."
     },
     {
-      title: "თანამედროვე მიღება და ორგანიზებული ვიზიტები",
-      text: "ადგილი კლინიკის რეალური მისაღების ფოტოსთვის.",
-      image: "",
-      tone: "reception"
-    },
-    {
-      title: "სერვისები და დიაგნოსტიკა ერთ სივრცეში",
-      text: "საწყისი დემო ვიზუალი კვლევებისა და მიმართულებებისთვის.",
-      image: "",
-      tone: "diagnostics"
+      title: "სერვისები ერთ სივრცეში",
+      text: "მიმართულებები და კვლევები მოცემულია demo-safe ფორმით."
     }
   ],
   assistantTitle: "კლინიკის ასისტენტი",
@@ -157,7 +155,11 @@ function renderClinic() {
           <span class="brand-mark">+</span>
           <span><strong>${clinicContent.clinicName}</strong><small>${clinicContent.demoVersionNote}</small></span>
         </a>
-        <nav aria-label="მთავარი მენიუ">
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="siteNav">
+          <span></span><span></span><span></span>
+          <span class="sr-only">მენიუ</span>
+        </button>
+        <nav id="siteNav" aria-label="მთავარი მენიუ">
           <a href="#top">მთავარი</a>
           <a href="#about">ჩვენს შესახებ</a>
           <a href="#services">სერვისები</a>
@@ -187,15 +189,18 @@ function renderClinic() {
           <div class="hero-visual hero-slideshow" id="heroSlideshow" aria-label="კლინიკის დემო სლაიდები">
             <div class="hero-slides">
               ${clinicContent.heroSlides.map((slide, index) => `<article class="hero-slide slide-${slide.tone} ${index === 0 ? "active" : ""}" aria-hidden="${index === 0 ? "false" : "true"}">
-                ${slide.image ? `<img src="${slide.image}" alt="${slide.title}">` : `<div class="slide-placeholder" aria-hidden="true"><span>${index + 1}</span></div>`}
+                <img src="${slide.image}" alt="${slide.title}">
                 <div class="slide-caption">
                   <b>${slide.title}</b>
                   <span>${slide.text}</span>
                 </div>
               </article>`).join("")}
             </div>
-            <div class="slide-dots" aria-label="სლაიდების არჩევა">
+            ${clinicContent.heroSlides.length > 1 ? `<div class="slide-dots" aria-label="სლაიდების არჩევა">
               ${clinicContent.heroSlides.map((slide, index) => `<button type="button" class="${index === 0 ? "active" : ""}" data-slide="${index}" aria-label="${slide.title}" aria-pressed="${index === 0 ? "true" : "false"}"></button>`).join("")}
+            </div>` : ""}
+            <div class="hero-visual-notes">
+              ${clinicContent.heroHighlights.map((item) => `<article><b>${item.title}</b><span>${item.text}</span></article>`).join("")}
             </div>
           </div>
         </div>
@@ -341,6 +346,7 @@ function renderClinic() {
 }
 
 function bindClinicUi() {
+  bindMobileMenu();
   bindHeroSlideshow();
   bindAssistant();
 
@@ -365,12 +371,28 @@ function bindClinicUi() {
   document.querySelector("#appointmentForm").addEventListener("submit", submitAppointment);
 }
 
+function bindMobileMenu() {
+  const toggle = document.querySelector(".menu-toggle");
+  const nav = document.querySelector("#siteNav");
+  if (!toggle || !nav) return;
+  const setOpen = (open) => {
+    nav.classList.toggle("open", open);
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+  };
+  toggle.addEventListener("click", () => setOpen(!nav.classList.contains("open")));
+  nav.querySelectorAll("a").forEach((link) => link.addEventListener("click", () => setOpen(false)));
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") setOpen(false);
+  });
+}
+
 function bindHeroSlideshow() {
   const slideshow = document.querySelector("#heroSlideshow");
   if (!slideshow) return;
   const slides = [...slideshow.querySelectorAll(".hero-slide")];
   const dots = [...slideshow.querySelectorAll("[data-slide]")];
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (slides.length <= 1) return;
 
   const showSlide = (index) => {
     heroSlideIndex = (index + slides.length) % slides.length;
