@@ -15,6 +15,7 @@ import {
   allOrders,
   allProducts,
   adminProducts,
+  clinicContentOverrides,
   cleanupSmokeAppointmentRequests,
   createAdminProduct,
   createAppointmentRequest,
@@ -26,6 +27,8 @@ import {
   importAdminProducts,
   initDatabase,
   saveChatMessage,
+  saveClinicContentOverrides,
+  resetClinicContentSection,
   updateAdminProduct,
   updateAppointmentStatus,
   updateOrderStatus,
@@ -87,15 +90,19 @@ createServer(async (req, res) => {
 }).listen(port, () => console.log(`Clinic site running at http://localhost:${port}`));
 
 async function handleApi(req, res, url) {
-  const body = ["POST", "PATCH"].includes(req.method) ? await readJson(req) : {};
+  const body = ["POST", "PATCH", "PUT"].includes(req.method) ? await readJson(req) : {};
   if (req.method === "GET" && url.pathname === "/api/deployment") return sendDeploymentJson(res);
   if (req.method === "GET" && url.pathname === "/api/health") return sendNoStoreJson(res, 200, { ok: true, ...deploymentInfo });
   if (req.method === "GET" && url.pathname === "/api/config") return sendJson(res, 200, storeConfig);
+  if (req.method === "GET" && url.pathname === "/api/content") return sendNoStoreJson(res, 200, { content: clinicContentOverrides() });
   if (req.method === "GET" && url.pathname === "/api/admin/session") return adminSessionRoute(req, res);
   if (req.method === "POST" && url.pathname === "/api/admin/login") return adminLoginRoute(req, res, body);
   if (req.method === "POST" && url.pathname === "/api/admin/logout") return adminLogoutRoute(req, res);
   if (req.method === "POST" && url.pathname === "/api/appointments") return appointmentRoute(req, res, body);
   if (url.pathname.startsWith("/api/admin/") && !isAdminAuthenticated(req)) return unauthorized(res);
+  if (req.method === "GET" && url.pathname === "/api/admin/content") return sendNoStoreJson(res, 200, { content: clinicContentOverrides(), assetOptions: clinicAssetOptions });
+  if (req.method === "PUT" && url.pathname === "/api/admin/content") return adminContentSaveRoute(res, body);
+  if (req.method === "POST" && url.pathname === "/api/admin/content/reset-section") return adminContentResetRoute(res, body);
   if (req.method === "POST" && url.pathname === "/api/admin/appointments/cleanup-smoke") return sendJson(res, 200, { success: true, removed: cleanupSmokeAppointmentRequests() });
   if (req.method === "GET" && url.pathname === "/api/admin/appointments") return sendJson(res, 200, allAppointmentRequests(Object.fromEntries(url.searchParams)));
   if (req.method === "PATCH" && url.pathname.match(/^\/api\/admin\/appointments\/\d+\/status$/)) return appointmentStatusRoute(res, Number(url.pathname.split("/")[4]), body);
@@ -215,6 +222,98 @@ function adminImportProductsRoute(res, body) {
   } catch (error) {
     sendJson(res, 400, { error: error.message, created: 0, updated: 0, skipped: 0, errors: [{ row: 0, sku: "", message: error.message }] });
   }
+}
+
+const clinicAssetOptions = [
+  "/assets/clinic-hero.png",
+  "/assets/plumb-hero.png",
+  "/assets/plumb-lifestyle.png",
+  "/assets/plumb-supplies.png"
+];
+const clinicContentKeys = new Set(["siteInfo", "heroSlides", "services", "doctors", "prices", "contact", "footer", "consentText"]);
+
+function adminContentSaveRoute(res, body) {
+  try {
+    return sendJson(res, 200, { success: true, content: saveClinicContentOverrides(validateClinicContent(body.content || body)) });
+  } catch (error) {
+    return sendJson(res, 400, { success: false, message: error.message || "Content validation failed" });
+  }
+}
+
+function adminContentResetRoute(res, body) {
+  try {
+    const section = cleanContentKey(body.section || "");
+    return sendJson(res, 200, { success: true, content: resetClinicContentSection(section) });
+  } catch (error) {
+    return sendJson(res, 400, { success: false, message: error.message || "Reset failed" });
+  }
+}
+
+function validateClinicContent(input) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("Content payload must be an object");
+  const output = {};
+  for (const [key, value] of Object.entries(input)) {
+    if (!clinicContentKeys.has(key)) throw new Error(`Unsupported content section: ${key}`);
+    if (key === "siteInfo") output[key] = cleanTextObject(value, ["clinicName", "shortSlogan", "demoVersionNote", "primaryCta", "secondaryCta"], 180);
+    if (key === "contact") output[key] = cleanTextObject(value, ["phone", "phoneHref", "email", "address", "workingHours"], 220);
+    if (key === "footer") output[key] = cleanTextObject(value, ["footerText", "privacyLinkText"], 420);
+    if (key === "consentText") output[key] = cleanTextObject(value, ["privacyNote", "consentCopy", "commentPlaceholder"], 520);
+    if (key === "heroSlides") output[key] = cleanContentList(value, 6, (item) => ({
+      title: cleanContentText(item?.title, 180),
+      text: cleanContentText(item?.text, 320),
+      image: cleanAssetPath(item?.image || "/assets/clinic-hero.png"),
+      tone: cleanContentText(item?.tone || "consultation", 40)
+    }));
+    if (key === "services") output[key] = cleanContentList(value, 20, (item) => ({
+      title: cleanContentText(item?.title, 120),
+      description: cleanContentText(item?.description, 520),
+      price: cleanContentText(item?.price, 140)
+    }));
+    if (key === "doctors") output[key] = cleanContentList(value, 20, (item) => ({
+      name: cleanContentText(item?.name, 140),
+      specialty: cleanContentText(item?.specialty, 160),
+      note: cleanContentText(item?.note, 280),
+      image: item?.image ? cleanAssetPath(item.image) : ""
+    }));
+    if (key === "prices") output[key] = cleanContentList(value, 30, (item) => ({
+      title: cleanContentText(item?.title, 140),
+      price: cleanContentText(item?.price, 140)
+    }));
+  }
+  return output;
+}
+
+function cleanContentKey(value) {
+  const key = String(value || "").trim();
+  if (!key) return "";
+  if (!clinicContentKeys.has(key)) throw new Error("Unsupported content section");
+  return key;
+}
+
+function cleanTextObject(value, fields, maxLength) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Content section must be an object");
+  return Object.fromEntries(fields.map((field) => [field, cleanContentText(value[field], maxLength)]));
+}
+
+function cleanContentList(value, maxItems, mapper) {
+  if (!Array.isArray(value)) throw new Error("Content section must be a list");
+  if (value.length > maxItems) throw new Error(`Too many items; max ${maxItems}`);
+  return value.map(mapper);
+}
+
+function cleanContentText(value, maxLength) {
+  const text = String(value ?? "").trim().replace(/\s+/g, " ");
+  if (text.length > maxLength) throw new Error(`Text exceeds ${maxLength} characters`);
+  if (/(<|>|<\/|<script|javascript:|data:|onerror\s*=|onload\s*=)/i.test(text)) throw new Error("Unsafe content is not allowed");
+  return text;
+}
+
+function cleanAssetPath(value) {
+  const path = cleanContentText(value, 180);
+  if (!path) return "";
+  if (!/^\/assets\/[A-Za-z0-9/_-]+\.(png|jpg|jpeg|webp)$/i.test(path)) throw new Error("Image path must be a local /assets file");
+  if (path.includes("..") || path.includes("//") || path.includes("\\")) throw new Error("Unsafe image path");
+  return path;
 }
 
 function adminSessionRoute(req, res) {

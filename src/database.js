@@ -101,6 +101,11 @@ export function initDatabase() {
       needsOperator INTEGER NOT NULL DEFAULT 0,
       createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
+    CREATE TABLE IF NOT EXISTS clinic_content (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
   `);
   migrateProductsTable();
   cleanupSmokeAppointmentRequests();
@@ -593,6 +598,37 @@ export function updateAppointmentStatus(id, status) {
   db.prepare("UPDATE appointment_requests SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(status, Number(id));
   const row = db.prepare("SELECT * FROM appointment_requests WHERE id = ?").get(Number(id));
   return row ? mapAppointment(row) : null;
+}
+export function clinicContentOverrides() {
+  return Object.fromEntries(db.prepare("SELECT key, value FROM clinic_content ORDER BY key").all().flatMap((row) => {
+    try {
+      return [[row.key, JSON.parse(row.value)]];
+    } catch {
+      return [];
+    }
+  }));
+}
+export function saveClinicContentOverrides(content) {
+  const entries = Object.entries(content || {});
+  const statement = db.prepare(`
+    INSERT INTO clinic_content (key, value, updated_at)
+    VALUES (?, ?, CURRENT_TIMESTAMP)
+    ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+  `);
+  db.exec("BEGIN");
+  try {
+    entries.forEach(([key, value]) => statement.run(key, JSON.stringify(value)));
+    db.exec("COMMIT");
+    return clinicContentOverrides();
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
+}
+export function resetClinicContentSection(key = "") {
+  if (key) db.prepare("DELETE FROM clinic_content WHERE key = ?").run(key);
+  else db.prepare("DELETE FROM clinic_content").run();
+  return clinicContentOverrides();
 }
 export function saveChatMessage(sessionId, role, content, needsOperator = false) {
   db.prepare("INSERT INTO chat_messages (sessionId, role, content, needsOperator) VALUES (?, ?, ?, ?)").run(sessionId, role, content, needsOperator ? 1 : 0);

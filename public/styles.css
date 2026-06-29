@@ -442,6 +442,88 @@ textarea { min-height: 112px; resize: vertical; }
   color: var(--teal-dark);
   font-weight: 900;
 }
+.content-manager {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255,255,255,.78);
+}
+.content-toolbar,
+.content-list-head,
+.content-item-head,
+.content-mini-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.content-toolbar,
+.content-mini-actions {
+  justify-content: flex-end;
+}
+.content-editor {
+  display: grid;
+  gap: 14px;
+}
+.content-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.content-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: 0 12px 34px rgba(31,132,216,.07);
+}
+.content-card h3 {
+  margin-bottom: 0;
+  font-size: 19px;
+}
+.content-card textarea {
+  min-height: 88px;
+}
+.content-list-card {
+  box-shadow: none;
+}
+.content-list-head {
+  justify-content: space-between;
+}
+.content-list {
+  display: grid;
+  gap: 12px;
+}
+.content-item {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #f8fdff;
+}
+.content-item-head {
+  justify-content: space-between;
+}
+.content-mini-actions button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--teal-dark);
+  font-weight: 950;
+  cursor: pointer;
+}
+.content-fields {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
 .admin-table-wrap {
   overflow: auto;
   border: 1px solid var(--line);
@@ -676,6 +758,8 @@ textarea { min-height: 112px; resize: vertical; }
   .admin-head { display: grid; }
   .admin-actions { justify-content: start; }
   .admin-filters { grid-template-columns: 1fr 1fr; }
+  .content-grid { grid-template-columns: 1fr; }
+  .content-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 640px) {
@@ -767,6 +851,10 @@ textarea { min-height: 112px; resize: vertical; }
   .assistant-form { grid-template-columns: 1fr; }
   .admin-shell { width: min(100% - 24px, 1180px); }
   .admin-filters { grid-template-columns: 1fr; }
+  .content-manager { padding: 12px; }
+  .content-toolbar { justify-content: stretch; }
+  .content-toolbar .btn { width: 100%; }
+  .content-fields { grid-template-columns: 1fr; }
   .admin-table-wrap {
     overflow: visible;
     border: 0;

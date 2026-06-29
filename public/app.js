@@ -101,9 +101,69 @@ const clinicContent = {
   ]
 };
 
-const services = clinicContent.services.map(({ title, description, price }) => [title, description, price]);
-const doctors = clinicContent.doctors.map(({ name, specialty, note }) => [name, specialty, note]);
-const benefits = clinicContent.benefits.map(({ title, text }) => [title, text]);
+const defaultClinicContent = deepCopy(clinicContent);
+let services = [];
+let doctors = [];
+let benefits = [];
+let prices = [];
+let adminContentDraft = null;
+let adminAssetOptions = ["/assets/clinic-hero.png"];
+
+function deepCopy(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function syncDerivedContent() {
+  services = clinicContent.services.map(({ title, description, price }) => [title, description, price]);
+  doctors = clinicContent.doctors.map(({ name, specialty, note, image }) => [name, specialty, note, image || ""]);
+  benefits = clinicContent.benefits.map(({ title, text }) => [title, text]);
+  prices = (clinicContent.prices?.length ? clinicContent.prices : clinicContent.services.slice(0, 6).map(({ title, price }) => ({ title, price }))).map(({ title, price }) => [title, price]);
+}
+
+function mergeClinicContent(overrides = {}) {
+  Object.assign(clinicContent, deepCopy(defaultClinicContent));
+  applyContentSection(overrides.siteInfo);
+  if (Array.isArray(overrides.heroSlides)) clinicContent.heroSlides = overrides.heroSlides;
+  if (Array.isArray(overrides.services)) clinicContent.services = overrides.services;
+  if (Array.isArray(overrides.doctors)) clinicContent.doctors = overrides.doctors;
+  if (Array.isArray(overrides.prices)) clinicContent.prices = overrides.prices;
+  applyContentSection(overrides.contact);
+  applyContentSection(overrides.footer);
+  applyContentSection(overrides.consentText);
+  syncDerivedContent();
+}
+
+function applyContentSection(section) {
+  if (section && typeof section === "object" && !Array.isArray(section)) Object.assign(clinicContent, section);
+}
+
+async function loadPublicContent() {
+  try {
+    const result = await api("/api/content");
+    mergeClinicContent(result.content || {});
+  } catch {
+    mergeClinicContent({});
+  }
+}
+
+function contentPayloadFromCurrent() {
+  return {
+    siteInfo: pickContent(["clinicName", "shortSlogan", "demoVersionNote", "primaryCta", "secondaryCta"]),
+    heroSlides: deepCopy(clinicContent.heroSlides),
+    services: deepCopy(clinicContent.services),
+    doctors: deepCopy(clinicContent.doctors),
+    prices: deepCopy(clinicContent.prices?.length ? clinicContent.prices : clinicContent.services.slice(0, 6).map(({ title, price }) => ({ title, price }))),
+    contact: pickContent(["phone", "phoneHref", "email", "address", "workingHours"]),
+    footer: pickContent(["footerText", "privacyLinkText"]),
+    consentText: pickContent(["privacyNote", "consentCopy", "commentPlaceholder"])
+  };
+}
+
+function pickContent(keys) {
+  return Object.fromEntries(keys.map((key) => [key, clinicContent[key] || ""]));
+}
+
+syncDerivedContent();
 
 const statusLabels = {
   new: "ახალი",
@@ -146,6 +206,11 @@ function isAdminRoute() {
 function render() {
   if (isAdminRoute()) renderAdmin();
   else renderClinic();
+}
+
+async function init() {
+  if (!isAdminRoute()) await loadPublicContent();
+  render();
 }
 
 function renderClinic() {
@@ -238,7 +303,7 @@ function renderClinic() {
             <p>${clinicContent.pricesText}</p>
           </div>
           <div class="price-list">
-            ${services.slice(0, 6).map(([title, , price]) => `<div><span>${title}</span><b>${price}</b></div>`).join("")}
+            ${prices.map(([title, price]) => `<div><span>${escapeHtml(title)}</span><b>${escapeHtml(price)}</b></div>`).join("")}
           </div>
         </div>
       </section>
@@ -573,6 +638,23 @@ function renderAdminDashboard() {
             <button class="btn ghost compact" id="adminLogout" type="button">გასვლა</button>
           </div>
         </div>
+        <section class="content-manager" id="contentManager">
+          <div class="section-head split">
+            <div>
+              <span class="eyebrow">ადმინი</span>
+              <h2>საიტის კონტენტი</h2>
+              <p>ფოტოების ატვირთვის მუდმივი სისტემა დაემატება storage-ის გადაწყვეტილების შემდეგ.</p>
+            </div>
+            <div class="content-toolbar">
+              <button class="btn compact" id="contentSave" type="button">შენახვა</button>
+              <button class="btn ghost compact" id="contentReset" type="button">დემო ტექსტზე დაბრუნება</button>
+            </div>
+          </div>
+          <div id="contentStatus" class="admin-status-text"></div>
+          <div id="contentEditor" class="content-editor">
+            <div class="empty-state">იტვირთება...</div>
+          </div>
+        </section>
         <div class="admin-filters">
           <input id="adminSearch" placeholder="სახელი ან ტელეფონი">
           <select id="adminStatus">
@@ -598,9 +680,168 @@ function bindAdmin() {
   document.querySelector("#adminCleanup").addEventListener("click", cleanupSmokeAppointments);
   document.querySelector("#adminLogout").addEventListener("click", adminLogout);
   document.querySelector("#adminApply").addEventListener("click", loadAppointments);
+  document.querySelector("#contentSave").addEventListener("click", saveContentManager);
+  document.querySelector("#contentReset").addEventListener("click", resetContentManager);
   document.querySelector("#adminSearch").addEventListener("keydown", (event) => {
     if (event.key === "Enter") loadAppointments();
   });
+  loadContentManager();
+}
+
+async function loadContentManager() {
+  const status = document.querySelector("#contentStatus");
+  const editor = document.querySelector("#contentEditor");
+  try {
+    const result = await api("/api/admin/content");
+    adminAssetOptions = result.assetOptions?.length ? result.assetOptions : adminAssetOptions;
+    mergeClinicContent(result.content || {});
+    adminContentDraft = contentPayloadFromCurrent();
+    renderContentEditor();
+    status.textContent = "";
+  } catch (error) {
+    editor.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
+  }
+}
+
+function renderContentEditor() {
+  const editor = document.querySelector("#contentEditor");
+  if (!editor || !adminContentDraft) return;
+  editor.innerHTML = `
+    <datalist id="assetOptions">${adminAssetOptions.map((path) => `<option value="${escapeHtml(path)}"></option>`).join("")}</datalist>
+    <div class="content-grid">
+      ${contentCard("ძირითადი", [
+        inputField("კლინიკის სახელი", "siteInfo.clinicName"),
+        inputField("სლოგანი", "siteInfo.shortSlogan"),
+        inputField("ვერსიის ტექსტი", "siteInfo.demoVersionNote"),
+        inputField("მთავარი ღილაკი", "siteInfo.primaryCta"),
+        inputField("მეორე ღილაკი", "siteInfo.secondaryCta")
+      ].join(""))}
+      ${contentCard("კონტაქტი", [
+        inputField("ტელეფონი", "contact.phone"),
+        inputField("ტელეფონი ბმულისთვის", "contact.phoneHref"),
+        inputField("ელფოსტა", "contact.email"),
+        inputField("მისამართი", "contact.address"),
+        inputField("სამუშაო საათები", "contact.workingHours")
+      ].join(""))}
+      ${contentCard("ფუტერი და თანხმობა", [
+        textField("ფუტერის ტექსტი", "footer.footerText"),
+        inputField("privacy ბმულის ტექსტი", "footer.privacyLinkText"),
+        textField("privacy შენიშვნა", "consentText.privacyNote"),
+        textField("თანხმობის ტექსტი", "consentText.consentCopy"),
+        textField("კომენტარის placeholder", "consentText.commentPlaceholder")
+      ].join(""))}
+    </div>
+    ${listSection("heroSlides", "სლაიდერი", "სლაიდის დამატება", ["title", "text", "image", "tone"], ["სათაური", "აღწერა", "სურათი", "ტონი"])}
+    ${listSection("services", "სერვისები", "სერვისის დამატება", ["title", "description", "price"], ["სათაური", "აღწერა", "ფასი"])}
+    ${listSection("doctors", "ექიმები", "ექიმის დამატება", ["name", "specialty", "note", "image"], ["სახელი", "სპეციალობა", "შენიშვნა", "სურათი"])}
+    ${listSection("prices", "ფასები", "ფასის დამატება", ["title", "price"], ["სათაური", "ფასი"])}
+  `;
+  editor.querySelectorAll("[data-content-path]").forEach((field) => {
+    field.addEventListener("input", () => setContentPath(field.dataset.contentPath, field.value));
+  });
+  editor.querySelectorAll("[data-content-action]").forEach((button) => {
+    button.addEventListener("click", () => handleContentAction(button.dataset.contentAction, button.dataset.section, Number(button.dataset.index || -1)));
+  });
+}
+
+function contentCard(title, body) {
+  return `<section class="content-card"><h3>${escapeHtml(title)}</h3>${body}</section>`;
+}
+
+function inputField(label, path) {
+  return `<label>${escapeHtml(label)}<input data-content-path="${escapeHtml(path)}" value="${escapeHtml(getContentPath(path))}"></label>`;
+}
+
+function textField(label, path) {
+  return `<label>${escapeHtml(label)}<textarea data-content-path="${escapeHtml(path)}">${escapeHtml(getContentPath(path))}</textarea></label>`;
+}
+
+function listSection(section, title, addLabel, fields, labels) {
+  const items = adminContentDraft[section] || [];
+  return `<section class="content-card content-list-card">
+    <div class="content-list-head">
+      <h3>${escapeHtml(title)}</h3>
+      <button class="btn ghost compact" type="button" data-content-action="add" data-section="${section}">${escapeHtml(addLabel)}</button>
+    </div>
+    <div class="content-list">
+      ${items.map((item, index) => `<article class="content-item">
+        <div class="content-item-head">
+          <strong>${escapeHtml(item.title || item.name || `${title} ${index + 1}`)}</strong>
+          <div class="content-mini-actions">
+            <button type="button" data-content-action="up" data-section="${section}" data-index="${index}" aria-label="ზემოთ">↑</button>
+            <button type="button" data-content-action="down" data-section="${section}" data-index="${index}" aria-label="ქვემოთ">↓</button>
+            <button type="button" data-content-action="delete" data-section="${section}" data-index="${index}" aria-label="წაშლა">×</button>
+          </div>
+        </div>
+        <div class="content-fields">
+          ${fields.map((field, fieldIndex) => {
+            const path = `${section}.${index}.${field}`;
+            const list = field === "image" ? " list=\"assetOptions\"" : "";
+            return `<label>${escapeHtml(labels[fieldIndex])}<input${list} data-content-path="${escapeHtml(path)}" value="${escapeHtml(item[field] || "")}"></label>`;
+          }).join("")}
+        </div>
+      </article>`).join("")}
+    </div>
+  </section>`;
+}
+
+function getContentPath(path) {
+  return path.split(".").reduce((target, key) => target?.[key], adminContentDraft) ?? "";
+}
+
+function setContentPath(path, value) {
+  const parts = path.split(".");
+  let target = adminContentDraft;
+  parts.slice(0, -1).forEach((part) => {
+    target = target[part];
+  });
+  target[parts.at(-1)] = value;
+}
+
+function handleContentAction(action, section, index) {
+  const list = adminContentDraft[section];
+  if (!Array.isArray(list)) return;
+  if (action === "add") list.push(emptyContentItem(section));
+  if (action === "delete" && index >= 0) list.splice(index, 1);
+  if (action === "up" && index > 0) [list[index - 1], list[index]] = [list[index], list[index - 1]];
+  if (action === "down" && index >= 0 && index < list.length - 1) [list[index + 1], list[index]] = [list[index], list[index + 1]];
+  renderContentEditor();
+}
+
+function emptyContentItem(section) {
+  if (section === "heroSlides") return { title: "", text: "", image: "/assets/clinic-hero.png", tone: "consultation" };
+  if (section === "services") return { title: "", description: "", price: "" };
+  if (section === "doctors") return { name: "", specialty: "", note: "", image: "" };
+  return { title: "", price: "" };
+}
+
+async function saveContentManager() {
+  const status = document.querySelector("#contentStatus");
+  status.textContent = "ინახება...";
+  try {
+    const result = await api("/api/admin/content", { method: "PUT", body: { content: adminContentDraft } });
+    mergeClinicContent(result.content || {});
+    adminContentDraft = contentPayloadFromCurrent();
+    renderContentEditor();
+    status.textContent = "კონტენტი შენახულია";
+  } catch (error) {
+    status.textContent = error.message;
+  }
+}
+
+async function resetContentManager() {
+  if (!confirm("დემო ტექსტზე დაბრუნება?")) return;
+  const status = document.querySelector("#contentStatus");
+  status.textContent = "სუფთავდება...";
+  try {
+    const result = await api("/api/admin/content/reset-section", { method: "POST", body: { section: "" } });
+    mergeClinicContent(result.content || {});
+    adminContentDraft = contentPayloadFromCurrent();
+    renderContentEditor();
+    status.textContent = "დემო კონტენტი აღდგენილია";
+  } catch (error) {
+    status.textContent = error.message;
+  }
 }
 
 async function cleanupSmokeAppointments() {
@@ -668,4 +909,4 @@ function escapeHtml(value) {
 }
 
 window.addEventListener("hashchange", render);
-render();
+init();
