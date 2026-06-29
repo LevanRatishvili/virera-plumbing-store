@@ -101,8 +101,8 @@ const clinicContent = {
   assistantQuickQuestions: [
     "როგორ ჩავეწერო ვიზიტზე?",
     "რა სერვისები გაქვთ?",
-    "რა ღირს კონსულტაცია?",
     "სად მდებარეობს კლინიკა?",
+    "რა ღირს კონსულტაცია?",
     "რა მონაცემებს აგროვებს ფორმა?"
   ]
 };
@@ -447,8 +447,9 @@ function renderClinic() {
         <div class="assistant-messages" id="assistantMessages" aria-live="polite">
           <div class="assistant-message assistant-message-bot">${clinicContent.assistantIntro}</div>
         </div>
-        <div class="assistant-quick">
-          ${clinicContent.assistantQuickQuestions.map((question) => `<button type="button" data-assistant-question="${question}">${question}</button>`).join("")}
+        <div class="assistant-quick" data-assistant-quick>
+          ${clinicContent.assistantQuickQuestions.map((question, index) => `<button class="${index > 2 ? "assistant-extra" : ""}" type="button" data-assistant-question="${question}">${question}</button>`).join("")}
+          ${clinicContent.assistantQuickQuestions.length > 3 ? `<button class="assistant-more" type="button" data-assistant-more aria-expanded="false">მეტი კითხვები</button>` : ""}
         </div>
         <form class="assistant-form" id="assistantForm">
           <input name="question" autocomplete="off" maxlength="180" placeholder="${clinicContent.assistantPlaceholder}" aria-label="${clinicContent.assistantPlaceholder}">
@@ -579,6 +580,12 @@ function bindAssistant() {
   close.addEventListener("click", () => setOpen(false));
   widget.querySelectorAll("[data-assistant-question]").forEach((button) => {
     button.addEventListener("click", () => ask(button.dataset.assistantQuestion));
+  });
+  widget.querySelector("[data-assistant-more]")?.addEventListener("click", (event) => {
+    const quick = widget.querySelector("[data-assistant-quick]");
+    const expanded = !quick.classList.contains("expanded");
+    quick.classList.toggle("expanded", expanded);
+    event.currentTarget.setAttribute("aria-expanded", expanded ? "true" : "false");
   });
   form.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -871,6 +878,7 @@ function setAdminTab(tab) {
   });
   document.querySelectorAll("[data-admin-tab]").forEach((button) => {
     button.classList.toggle("active", button.dataset.adminTab === activeAdminTab);
+    if (button.dataset.adminTab === activeAdminTab) button.scrollIntoView({ inline: "nearest", block: "nearest" });
   });
 }
 
