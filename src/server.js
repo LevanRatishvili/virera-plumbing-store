@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { extname, join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { storeConfig } from "./config.js";
@@ -100,7 +100,7 @@ async function handleApi(req, res, url) {
   if (req.method === "POST" && url.pathname === "/api/admin/logout") return adminLogoutRoute(req, res);
   if (req.method === "POST" && url.pathname === "/api/appointments") return appointmentRoute(req, res, body);
   if (url.pathname.startsWith("/api/admin/") && !isAdminAuthenticated(req)) return unauthorized(res);
-  if (req.method === "GET" && url.pathname === "/api/admin/content") return sendNoStoreJson(res, 200, { content: clinicContentOverrides(), assetOptions: clinicAssetOptions });
+  if (req.method === "GET" && url.pathname === "/api/admin/content") return sendNoStoreJson(res, 200, { content: clinicContentOverrides(), assetOptions: clinicAssetOptions, build: deploymentInfo });
   if (req.method === "PUT" && url.pathname === "/api/admin/content") return adminContentSaveRoute(res, body);
   if (req.method === "POST" && url.pathname === "/api/admin/content/reset-section") return adminContentResetRoute(res, body);
   if (req.method === "POST" && url.pathname === "/api/admin/appointments/cleanup-smoke") return sendJson(res, 200, { success: true, removed: cleanupSmokeAppointmentRequests() });
@@ -224,12 +224,7 @@ function adminImportProductsRoute(res, body) {
   }
 }
 
-const clinicAssetOptions = [
-  "/assets/clinic-hero.png",
-  "/assets/plumb-hero.png",
-  "/assets/plumb-lifestyle.png",
-  "/assets/plumb-supplies.png"
-];
+const clinicAssetOptions = collectClinicAssetOptions();
 const clinicContentKeys = new Set(["siteInfo", "heroSlides", "services", "doctors", "prices", "contact", "footer", "consentText"]);
 
 function adminContentSaveRoute(res, body) {
@@ -314,6 +309,27 @@ function cleanAssetPath(value) {
   if (!/^\/assets\/[A-Za-z0-9/_-]+\.(png|jpg|jpeg|webp)$/i.test(path)) throw new Error("Image path must be a local /assets file");
   if (path.includes("..") || path.includes("//") || path.includes("\\")) throw new Error("Unsafe image path");
   return path;
+}
+
+function collectClinicAssetOptions() {
+  const fallback = ["/assets/clinic-hero.png", "/assets/plumb-hero.png", "/assets/plumb-lifestyle.png", "/assets/plumb-supplies.png"];
+  const assetsDir = join(publicDir, "assets");
+  const allowed = new Set();
+  const walk = (dir, prefix = "/assets") => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const child = join(dir, entry.name);
+      const publicPath = `${prefix}/${entry.name}`.replaceAll("\\", "/");
+      if (entry.isDirectory()) walk(child, publicPath);
+      if (entry.isFile() && /\.(png|jpe?g|webp)$/i.test(entry.name)) allowed.add(publicPath);
+    }
+  };
+  try {
+    walk(assetsDir);
+  } catch {
+    fallback.forEach((path) => allowed.add(path));
+  }
+  fallback.forEach((path) => allowed.add(path));
+  return [...allowed].sort((a, b) => a.localeCompare(b, "ka"));
 }
 
 function adminSessionRoute(req, res) {

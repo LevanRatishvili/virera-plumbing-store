@@ -108,6 +108,8 @@ let benefits = [];
 let prices = [];
 let adminContentDraft = null;
 let adminAssetOptions = ["/assets/clinic-hero.png"];
+let adminContentOverrides = {};
+let adminBuildInfo = {};
 
 function deepCopy(value) {
   return JSON.parse(JSON.stringify(value));
@@ -647,9 +649,15 @@ function renderAdminDashboard() {
             </div>
             <div class="content-toolbar">
               <button class="btn compact" id="contentSave" type="button">შენახვა</button>
+              <button class="btn ghost compact" id="contentExport" type="button">კონტენტის ექსპორტი</button>
+              <button class="btn ghost compact" id="contentImport" type="button">კონტენტის იმპორტი</button>
               <button class="btn ghost compact" id="contentReset" type="button">დემო ტექსტზე დაბრუნება</button>
             </div>
           </div>
+          <div class="admin-note">
+            კონტენტი ინახება საიტის მონაცემთა ბაზაში/storage-ში. მნიშვნელოვანი განახლების წინ ჩამოტვირთეთ JSON backup. მუდმივი ფოტო ატვირთვა საჭიროებს ცალკე storage-ის გადაწყვეტას.
+          </div>
+          <input id="contentImportFile" type="file" accept="application/json,.json" hidden>
           <div id="contentStatus" class="admin-status-text"></div>
           <div id="contentEditor" class="content-editor">
             <div class="empty-state">იტვირთება...</div>
@@ -681,6 +689,9 @@ function bindAdmin() {
   document.querySelector("#adminLogout").addEventListener("click", adminLogout);
   document.querySelector("#adminApply").addEventListener("click", loadAppointments);
   document.querySelector("#contentSave").addEventListener("click", saveContentManager);
+  document.querySelector("#contentExport").addEventListener("click", exportContentManager);
+  document.querySelector("#contentImport").addEventListener("click", () => document.querySelector("#contentImportFile").click());
+  document.querySelector("#contentImportFile").addEventListener("change", importContentManager);
   document.querySelector("#contentReset").addEventListener("click", resetContentManager);
   document.querySelector("#adminSearch").addEventListener("keydown", (event) => {
     if (event.key === "Enter") loadAppointments();
@@ -694,6 +705,8 @@ async function loadContentManager() {
   try {
     const result = await api("/api/admin/content");
     adminAssetOptions = result.assetOptions?.length ? result.assetOptions : adminAssetOptions;
+    adminContentOverrides = deepCopy(result.content || {});
+    adminBuildInfo = result.build || {};
     mergeClinicContent(result.content || {});
     adminContentDraft = contentPayloadFromCurrent();
     renderContentEditor();
@@ -708,6 +721,14 @@ function renderContentEditor() {
   if (!editor || !adminContentDraft) return;
   editor.innerHTML = `
     <datalist id="assetOptions">${adminAssetOptions.map((path) => `<option value="${escapeHtml(path)}"></option>`).join("")}</datalist>
+    <div class="section-reset-grid">
+      ${sectionResetButton("heroSlides", "სლაიდერის reset")}
+      ${sectionResetButton("services", "სერვისების reset")}
+      ${sectionResetButton("doctors", "ექიმების reset")}
+      ${sectionResetButton("prices", "ფასების reset")}
+      ${sectionResetButton("contact", "კონტაქტის reset")}
+      ${sectionResetButton("footer-consent", "ფუტერი/თანხმობა reset")}
+    </div>
     <div class="content-grid">
       ${contentCard("ძირითადი", [
         inputField("კლინიკის სახელი", "siteInfo.clinicName"),
@@ -739,13 +760,27 @@ function renderContentEditor() {
   editor.querySelectorAll("[data-content-path]").forEach((field) => {
     field.addEventListener("input", () => setContentPath(field.dataset.contentPath, field.value));
   });
+  editor.querySelectorAll("[data-asset-select]").forEach((field) => {
+    field.addEventListener("change", () => {
+      if (!field.value) return;
+      setContentPath(field.dataset.assetSelect, field.value);
+      renderContentEditor();
+    });
+  });
   editor.querySelectorAll("[data-content-action]").forEach((button) => {
     button.addEventListener("click", () => handleContentAction(button.dataset.contentAction, button.dataset.section, Number(button.dataset.index || -1)));
+  });
+  editor.querySelectorAll("[data-reset-section]").forEach((button) => {
+    button.addEventListener("click", () => resetContentSection(button.dataset.resetSection, button.textContent.trim()));
   });
 }
 
 function contentCard(title, body) {
   return `<section class="content-card"><h3>${escapeHtml(title)}</h3>${body}</section>`;
+}
+
+function sectionResetButton(section, label) {
+  return `<button class="btn ghost compact" type="button" data-reset-section="${escapeHtml(section)}">${escapeHtml(label)}</button>`;
 }
 
 function inputField(label, path) {
@@ -776,13 +811,26 @@ function listSection(section, title, addLabel, fields, labels) {
         <div class="content-fields">
           ${fields.map((field, fieldIndex) => {
             const path = `${section}.${index}.${field}`;
-            const list = field === "image" ? " list=\"assetOptions\"" : "";
-            return `<label>${escapeHtml(labels[fieldIndex])}<input${list} data-content-path="${escapeHtml(path)}" value="${escapeHtml(item[field] || "")}"></label>`;
+            if (field === "image") return imageField(labels[fieldIndex], path, item[field] || "");
+            return `<label>${escapeHtml(labels[fieldIndex])}<input data-content-path="${escapeHtml(path)}" value="${escapeHtml(item[field] || "")}"></label>`;
           }).join("")}
         </div>
       </article>`).join("")}
     </div>
   </section>`;
+}
+
+function imageField(label, path, value) {
+  return `<label class="asset-field">${escapeHtml(label)}
+    <span class="asset-picker">
+      <input list="assetOptions" data-content-path="${escapeHtml(path)}" value="${escapeHtml(value)}">
+      <select data-asset-select="${escapeHtml(path)}">
+        <option value="">აირჩიეთ asset</option>
+        ${adminAssetOptions.map((asset) => `<option value="${escapeHtml(asset)}" ${asset === value ? "selected" : ""}>${escapeHtml(asset)}</option>`).join("")}
+      </select>
+      ${value ? `<img class="asset-preview" src="${escapeHtml(value)}" alt="Asset preview">` : `<span class="asset-preview empty">preview</span>`}
+    </span>
+  </label>`;
 }
 
 function getContentPath(path) {
@@ -820,10 +868,82 @@ async function saveContentManager() {
   status.textContent = "ინახება...";
   try {
     const result = await api("/api/admin/content", { method: "PUT", body: { content: adminContentDraft } });
+    adminContentOverrides = deepCopy(result.content || {});
     mergeClinicContent(result.content || {});
     adminContentDraft = contentPayloadFromCurrent();
     renderContentEditor();
     status.textContent = "კონტენტი შენახულია";
+  } catch (error) {
+    status.textContent = error.message;
+  }
+}
+
+function exportContentManager() {
+  if (!adminContentDraft) return;
+  const exportedAt = new Date().toISOString();
+  const payload = {
+    type: "clinic-content-backup",
+    exportedAt,
+    app: {
+      name: adminBuildInfo.appName || "virera-plumbing-store",
+      version: adminBuildInfo.version || adminBuildInfo.appVersion || "",
+      commit: adminBuildInfo.commit || "",
+      buildTime: adminBuildInfo.buildTime || ""
+    },
+    content: deepCopy(adminContentDraft),
+    overrides: deepCopy(adminContentOverrides)
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `clinic-content-backup-${exportedAt.slice(0, 10)}.json`;
+  document.body.append(link);
+  link.click();
+  URL.revokeObjectURL(link.href);
+  link.remove();
+  document.querySelector("#contentStatus").textContent = "backup JSON ჩამოიტვირთა";
+}
+
+async function importContentManager(event) {
+  const input = event.currentTarget;
+  const file = input.files?.[0];
+  if (!file) return;
+  const status = document.querySelector("#contentStatus");
+  try {
+    if (file.size > 300000) throw new Error("ფაილი ძალიან დიდია");
+    const raw = await file.text();
+    const parsed = JSON.parse(raw);
+    const content = parsed.content || parsed.overrides || parsed;
+    status.textContent = "იმპორტი ინახება...";
+    const result = await api("/api/admin/content", { method: "PUT", body: { content } });
+    adminContentOverrides = deepCopy(result.content || {});
+    mergeClinicContent(result.content || {});
+    adminContentDraft = contentPayloadFromCurrent();
+    renderContentEditor();
+    status.textContent = "კონტენტი იმპორტირებულია";
+  } catch (error) {
+    status.textContent = error.message || "იმპორტი ვერ შესრულდა";
+  } finally {
+    input.value = "";
+  }
+}
+
+async function resetContentSection(section, label) {
+  const sections = section === "footer-consent" ? ["footer", "consentText"] : [section];
+  if (!confirm(`${label} ?`)) return;
+  const status = document.querySelector("#contentStatus");
+  status.textContent = "სექცია სუფთავდება...";
+  try {
+    let latest = {};
+    for (const item of sections) {
+      const result = await api("/api/admin/content/reset-section", { method: "POST", body: { section: item } });
+      latest = result.content || {};
+    }
+    adminContentOverrides = deepCopy(latest);
+    mergeClinicContent(latest);
+    adminContentDraft = contentPayloadFromCurrent();
+    renderContentEditor();
+    status.textContent = "სექცია დაბრუნდა demo მნიშვნელობებზე";
   } catch (error) {
     status.textContent = error.message;
   }
@@ -835,6 +955,7 @@ async function resetContentManager() {
   status.textContent = "სუფთავდება...";
   try {
     const result = await api("/api/admin/content/reset-section", { method: "POST", body: { section: "" } });
+    adminContentOverrides = deepCopy(result.content || {});
     mergeClinicContent(result.content || {});
     adminContentDraft = contentPayloadFromCurrent();
     renderContentEditor();
