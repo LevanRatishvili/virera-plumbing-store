@@ -324,7 +324,7 @@ function cleanAssetPath(value) {
 }
 
 function collectClinicAssetOptions() {
-  const fallback = [
+  const clinicSafeAssets = [
     "/assets/clinic-consultation.png",
     "/assets/clinic-reception.png",
     "/assets/clinic-diagnostics.png",
@@ -332,24 +332,15 @@ function collectClinicAssetOptions() {
     "/assets/doctor-cardiologist.png",
     "/assets/doctor-pediatrician.png",
     "/assets/doctor-endocrinologist.png",
-    "/assets/clinic-hero.png"
+    "/assets/clinic-hero.png",
+    "/assets/site-logo.png"
   ];
-  const assetsDir = join(publicDir, "assets");
   const allowed = new Set();
-  const walk = (dir, prefix = "/assets") => {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      const child = join(dir, entry.name);
-      const publicPath = `${prefix}/${entry.name}`.replaceAll("\\", "/");
-      if (entry.isDirectory()) walk(child, publicPath);
-      if (entry.isFile() && /\.(png|jpe?g|webp)$/i.test(entry.name)) allowed.add(publicPath);
-    }
-  };
-  try {
-    walk(assetsDir);
-  } catch {
-    fallback.forEach((path) => allowed.add(path));
-  }
-  fallback.forEach((path) => allowed.add(path));
+  clinicSafeAssets.forEach((path) => {
+    try {
+      if (existsSync(join(publicDir, path.replace(/^\//, "")))) allowed.add(path);
+    } catch {}
+  });
   if (storageConfig.mediaUploadEnabled) collectUploadedAssetOptions().forEach((path) => allowed.add(path));
   return [...allowed].sort((a, b) => a.localeCompare(b, "ka"));
 }
