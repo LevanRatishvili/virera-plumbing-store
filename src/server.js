@@ -1,10 +1,11 @@
 import { createServer } from "node:http";
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { extname, join, dirname } from "node:path";
+import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { extname, join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { storeConfig } from "./config.js";
+import { publicStorageDiagnostics, storageConfig } from "./storage.js";
 import {
   allBrands,
   allCategories,
@@ -48,6 +49,7 @@ const adminSessions = new Map();
 const appointmentBuckets = new Map();
 const buildInfo = readBuildInfo();
 const runtimeStartedAt = new Date().toISOString();
+const storageDiagnostics = publicStorageDiagnostics();
 const deploymentInfo = {
   appName: buildInfo.appName || "virera-plumbing-store",
   commit: buildInfo.commit || process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || "local",
@@ -61,7 +63,12 @@ const deploymentInfo = {
   renderBranch: process.env.RENDER_GIT_BRANCH || "",
   service: process.env.RENDER_SERVICE_NAME || "local",
   deployedAt: process.env.RENDER_DEPLOYED_AT || "",
-  environment: process.env.NODE_ENV || "development"
+  environment: process.env.NODE_ENV || "development",
+  storage: storageDiagnostics,
+  dataDirConfigured: storageDiagnostics.dataDirConfigured,
+  databasePathSource: storageDiagnostics.databasePathSource,
+  mediaUploadEnabled: storageDiagnostics.mediaUploadEnabled,
+  persistentStorageWarning: storageDiagnostics.persistentStorageWarning
 };
 deploymentInfo.shortCommit = deploymentInfo.commit.slice(0, 7);
 
@@ -72,7 +79,10 @@ const mimeTypes = {
   ".css": "text/css; charset=utf-8",
   ".js": "application/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
-  ".png": "image/png"
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp"
 };
 
 createServer(async (req, res) => {
@@ -90,7 +100,8 @@ createServer(async (req, res) => {
 }).listen(port, () => console.log(`Clinic site running at http://localhost:${port}`));
 
 async function handleApi(req, res, url) {
-  const body = ["POST", "PATCH", "PUT"].includes(req.method) ? await readJson(req) : {};
+  const isMediaUpload = req.method === "POST" && url.pathname === "/api/admin/media/upload";
+  const body = ["POST", "PATCH", "PUT"].includes(req.method) && !isMediaUpload ? await readJson(req) : {};
   if (req.method === "GET" && url.pathname === "/api/deployment") return sendDeploymentJson(res);
   if (req.method === "GET" && url.pathname === "/api/health") return sendNoStoreJson(res, 200, { ok: true, ...deploymentInfo });
   if (req.method === "GET" && url.pathname === "/api/config") return sendJson(res, 200, storeConfig);
@@ -103,6 +114,7 @@ async function handleApi(req, res, url) {
   if (req.method === "GET" && url.pathname === "/api/admin/content") return sendNoStoreJson(res, 200, { content: clinicContentOverrides(), assetOptions: clinicAssetOptions, build: deploymentInfo });
   if (req.method === "PUT" && url.pathname === "/api/admin/content") return adminContentSaveRoute(res, body);
   if (req.method === "POST" && url.pathname === "/api/admin/content/reset-section") return adminContentResetRoute(res, body);
+  if (isMediaUpload) return adminMediaUploadRoute(req, res);
   if (req.method === "POST" && url.pathname === "/api/admin/appointments/cleanup-smoke") return sendJson(res, 200, { success: true, removed: cleanupSmokeAppointmentRequests() });
   if (req.method === "GET" && url.pathname === "/api/admin/appointments") return sendJson(res, 200, allAppointmentRequests(Object.fromEntries(url.searchParams)));
   if (req.method === "PATCH" && url.pathname.match(/^\/api\/admin\/appointments\/\d+\/status$/)) return appointmentStatusRoute(res, Number(url.pathname.split("/")[4]), body);
@@ -306,7 +318,7 @@ function cleanContentText(value, maxLength) {
 function cleanAssetPath(value) {
   const path = cleanContentText(value, 180);
   if (!path) return "";
-  if (!/^\/assets\/[A-Za-z0-9/_-]+\.(png|jpg|jpeg|webp)$/i.test(path)) throw new Error("Image path must be a local /assets file");
+  if (!/^\/(assets|uploads)\/[A-Za-z0-9/_-]+\.(png|jpg|jpeg|webp)$/i.test(path)) throw new Error("Image path must be a local image file");
   if (path.includes("..") || path.includes("//") || path.includes("\\")) throw new Error("Unsafe image path");
   return path;
 }
@@ -329,7 +341,41 @@ function collectClinicAssetOptions() {
     fallback.forEach((path) => allowed.add(path));
   }
   fallback.forEach((path) => allowed.add(path));
+  if (storageConfig.mediaUploadEnabled) collectUploadedAssetOptions().forEach((path) => allowed.add(path));
   return [...allowed].sort((a, b) => a.localeCompare(b, "ka"));
+}
+
+function collectUploadedAssetOptions() {
+  const allowed = new Set();
+  const walk = (dir, prefix = "/uploads") => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const child = join(dir, entry.name);
+      const publicPath = `${prefix}/${entry.name}`.replaceAll("\\", "/");
+      if (entry.isDirectory()) walk(child, publicPath);
+      if (entry.isFile() && /\.(png|jpe?g|webp)$/i.test(entry.name)) allowed.add(publicPath);
+    }
+  };
+  try {
+    walk(storageConfig.mediaUploadDir);
+  } catch {}
+  return [...allowed];
+}
+
+async function adminMediaUploadRoute(req, res) {
+  try {
+    if (!storageConfig.mediaUploadEnabled) {
+      return sendJson(res, 503, { success: false, message: "Media upload is disabled until persistent storage is configured." });
+    }
+    const file = await readMultipartImage(req);
+    const safeName = safeUploadName(file.filename, file.contentType);
+    const targetPath = resolve(storageConfig.mediaUploadDir, safeName);
+    const uploadRoot = resolve(storageConfig.mediaUploadDir);
+    if (!targetPath.startsWith(`${uploadRoot}\\`) && !targetPath.startsWith(`${uploadRoot}/`)) throw new Error("Unsafe upload path");
+    writeFileSync(targetPath, file.buffer);
+    return sendJson(res, 201, { success: true, path: `/uploads/${safeName}` });
+  } catch (error) {
+    return sendJson(res, 400, { success: false, message: error.message || "Upload failed" });
+  }
 }
 
 function adminSessionRoute(req, res) {
@@ -585,6 +631,62 @@ async function readJson(req) {
   for await (const chunk of req) raw += chunk;
   try { return raw ? JSON.parse(raw) : {}; } catch { return {}; }
 }
+
+async function readRaw(req, maxBytes) {
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (size > maxBytes) throw new Error("File is too large");
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks);
+}
+
+async function readMultipartImage(req) {
+  const contentType = String(req.headers["content-type"] || "");
+  const boundaryMatch = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/i);
+  const boundary = boundaryMatch?.[1] || boundaryMatch?.[2];
+  if (!boundary) throw new Error("Multipart boundary is missing");
+  const raw = await readRaw(req, 3 * 1024 * 1024 + 64 * 1024);
+  const parts = raw.toString("latin1").split(`--${boundary}`);
+  for (const part of parts) {
+    if (!part.includes("Content-Disposition") || !part.includes("filename=")) continue;
+    const headerEnd = part.indexOf("\r\n\r\n");
+    if (headerEnd === -1) continue;
+    const headers = part.slice(0, headerEnd);
+    let payload = part.slice(headerEnd + 4);
+    if (payload.endsWith("\r\n")) payload = payload.slice(0, -2);
+    const buffer = Buffer.from(payload, "latin1");
+    const filename = headers.match(/filename="([^"]*)"/i)?.[1] || "upload";
+    const fileType = headers.match(/Content-Type:\s*([^\r\n]+)/i)?.[1]?.trim().toLowerCase() || "";
+    validateImageUpload(buffer, filename, fileType);
+    return { buffer, filename, contentType: fileType };
+  }
+  throw new Error("Image file is missing");
+}
+
+function validateImageUpload(buffer, filename, contentType) {
+  if (!buffer.length) throw new Error("Image file is empty");
+  if (buffer.length > 3 * 1024 * 1024) throw new Error("Image file must be 3MB or smaller");
+  if (!["image/jpeg", "image/png", "image/webp"].includes(contentType)) throw new Error("Only JPG, PNG, and WebP images are allowed");
+  const lowerName = String(filename || "").toLowerCase();
+  if (/\.(svg|html?|js|mjs|exe|bat|cmd|ps1|php|sh)$/i.test(lowerName)) throw new Error("This file type is not allowed");
+  const isPng = buffer.length > 8 && buffer[0] === 0x89 && buffer.slice(1, 4).toString("ascii") === "PNG";
+  const isJpeg = buffer.length > 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  const isWebp = buffer.length > 12 && buffer.slice(0, 4).toString("ascii") === "RIFF" && buffer.slice(8, 12).toString("ascii") === "WEBP";
+  if (contentType === "image/png" && !isPng) throw new Error("PNG file signature is invalid");
+  if (contentType === "image/jpeg" && !isJpeg) throw new Error("JPEG file signature is invalid");
+  if (contentType === "image/webp" && !isWebp) throw new Error("WebP file signature is invalid");
+}
+
+function safeUploadName(filename, contentType) {
+  const extByType = { "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp" };
+  const original = String(filename || "image").replace(/\.[^.]+$/, "");
+  const base = original.toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "image";
+  return `${Date.now()}-${randomBytes(4).toString("hex")}-${base}${extByType[contentType]}`;
+}
+
 function safeJson(raw) {
   try { return JSON.parse(raw); } catch { const m = String(raw || "").match(/\{[\s\S]*\}/); try { return m ? JSON.parse(m[0]) : null; } catch { return null; } }
 }
@@ -620,6 +722,7 @@ function serveAdminFallback(res) {
 }
 
 async function serveStatic(res, pathname, method = "GET") {
+  if (pathname.startsWith("/uploads/")) return serveUploadAsset(res, pathname, method);
   let filePath = pathname === "/" ? indexPath : join(publicDir, pathname);
   if (!existsSync(filePath) || !filePath.startsWith(publicDir)) filePath = indexPath;
   const ext = extname(filePath);
@@ -637,6 +740,23 @@ async function serveStatic(res, pathname, method = "GET") {
   if (filePath === indexPath) return res.end(injectBuildMarkers(await readFile(filePath, "utf8")));
   res.end(await readFile(filePath));
 }
+
+async function serveUploadAsset(res, pathname, method = "GET") {
+  if (!storageConfig.mediaUploadEnabled) return sendJson(res, 404, { error: "Upload storage is disabled" });
+  const relativePath = pathname.replace(/^\/uploads\//, "");
+  if (!/^[A-Za-z0-9/_-]+\.(png|jpg|jpeg|webp)$/i.test(relativePath) || relativePath.includes("..") || relativePath.includes("\\")) {
+    return sendJson(res, 404, { error: "File not found" });
+  }
+  const uploadRoot = resolve(storageConfig.mediaUploadDir);
+  const filePath = resolve(uploadRoot, relativePath);
+  if (!filePath.startsWith(`${uploadRoot}\\`) && !filePath.startsWith(`${uploadRoot}/`)) return sendJson(res, 404, { error: "File not found" });
+  if (!existsSync(filePath)) return sendJson(res, 404, { error: "File not found" });
+  const ext = extname(filePath).toLowerCase();
+  res.writeHead(200, { "Content-Type": mimeTypes[ext] || "application/octet-stream", "Cache-Control": "public, max-age=3600" });
+  if (method === "HEAD") return res.end();
+  res.end(await readFile(filePath));
+}
+
 function sendJson(res, status, payload) {
   res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
   res.end(JSON.stringify(payload));

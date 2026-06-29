@@ -110,6 +110,7 @@ let adminContentDraft = null;
 let adminAssetOptions = ["/assets/clinic-hero.png"];
 let adminContentOverrides = {};
 let adminBuildInfo = {};
+let adminStorageInfo = {};
 
 function deepCopy(value) {
   return JSON.parse(JSON.stringify(value));
@@ -640,6 +641,11 @@ function renderAdminDashboard() {
             <button class="btn ghost compact" id="adminLogout" type="button">გასვლა</button>
           </div>
         </div>
+        <section class="storage-status-card" id="storageStatus">
+          <span class="eyebrow">Storage</span>
+          <h2>საცავის სტატუსი</h2>
+          <p>იტვირთება...</p>
+        </section>
         <section class="content-manager" id="contentManager">
           <div class="section-head split">
             <div>
@@ -707,13 +713,32 @@ async function loadContentManager() {
     adminAssetOptions = result.assetOptions?.length ? result.assetOptions : adminAssetOptions;
     adminContentOverrides = deepCopy(result.content || {});
     adminBuildInfo = result.build || {};
+    adminStorageInfo = adminBuildInfo.storage || {};
     mergeClinicContent(result.content || {});
     adminContentDraft = contentPayloadFromCurrent();
+    renderStorageStatus();
     renderContentEditor();
     status.textContent = "";
   } catch (error) {
     editor.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
   }
+}
+
+function renderStorageStatus() {
+  const target = document.querySelector("#storageStatus");
+  if (!target) return;
+  const uploadEnabled = Boolean(adminStorageInfo.mediaUploadEnabled);
+  const persistentWarning = Boolean(adminStorageInfo.persistentStorageWarning);
+  target.innerHTML = `
+    <span class="eyebrow">Storage</span>
+    <h2>საცავის სტატუსი</h2>
+    <div class="storage-status-grid">
+      <div><b>კონტენტის ბაზა</b><span>${adminStorageInfo.dataDirConfigured ? "DATA_DIR დაყენებულია" : "ლოკალური data/ ნაგულისხმევი"}</span></div>
+      <div><b>ფოტოების ატვირთვა</b><span>${uploadEnabled ? "ჩართულია ტესტურ რეჟიმში" : "გამორთულია"}</span></div>
+      <div><b>Backup</b><span>დიდ ცვლილებამდე ჩამოტვირთეთ JSON backup</span></div>
+    </div>
+    <p>${persistentWarning ? "Production-ზე მუდმივი კონტენტისთვის საჭიროა persistent storage ან გარე storage." : "საცავის კონფიგურაცია მზად არის; ფოტო ატვირთვა მაინც მხოლოდ დაცულ რეჟიმში უნდა ჩაირთოს."}</p>
+  `;
 }
 
 function renderContentEditor() {
@@ -729,6 +754,7 @@ function renderContentEditor() {
       ${sectionResetButton("contact", "კონტაქტის reset")}
       ${sectionResetButton("footer-consent", "ფუტერი/თანხმობა reset")}
     </div>
+    ${mediaUploadPanel()}
     <div class="content-grid">
       ${contentCard("ძირითადი", [
         inputField("კლინიკის სახელი", "siteInfo.clinicName"),
@@ -773,6 +799,8 @@ function renderContentEditor() {
   editor.querySelectorAll("[data-reset-section]").forEach((button) => {
     button.addEventListener("click", () => resetContentSection(button.dataset.resetSection, button.textContent.trim()));
   });
+  const uploadInput = editor.querySelector("#mediaUploadFile");
+  if (uploadInput) uploadInput.addEventListener("change", uploadMediaAsset);
 }
 
 function contentCard(title, body) {
@@ -831,6 +859,48 @@ function imageField(label, path, value) {
       ${value ? `<img class="asset-preview" src="${escapeHtml(value)}" alt="Asset preview">` : `<span class="asset-preview empty">preview</span>`}
     </span>
   </label>`;
+}
+
+function mediaUploadPanel() {
+  const enabled = Boolean(adminStorageInfo.mediaUploadEnabled);
+  if (!enabled) {
+    return `<section class="media-upload-panel disabled">
+      <div>
+        <b>ფოტოების ატვირთვა გამორთულია</b>
+        <p>ამ ეტაპზე გამოიყენეთ არსებული /assets/ სურათები ან უსაფრთხო ლოკალური path. რეალური ატვირთვა ჩაირთვება მხოლოდ persistent storage-ის კონფიგურაციის შემდეგ.</p>
+      </div>
+    </section>`;
+  }
+  return `<section class="media-upload-panel">
+    <div>
+      <b>ფოტოს ატვირთვა</b>
+      <p>დაშვებულია JPG, PNG ან WebP, მაქსიმუმ 3MB. SVG/HTML/script ფაილები არ მიიღება.</p>
+    </div>
+    <label class="btn ghost compact" for="mediaUploadFile">ფაილის არჩევა</label>
+    <input id="mediaUploadFile" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+  </section>`;
+}
+
+async function uploadMediaAsset(event) {
+  const input = event.currentTarget;
+  const file = input.files?.[0];
+  if (!file) return;
+  const status = document.querySelector("#contentStatus");
+  try {
+    const body = new FormData();
+    body.append("file", file);
+    status.textContent = "ფოტო იტვირთება...";
+    const response = await fetch("/api/admin/media/upload", { method: "POST", body });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.message || "ატვირთვა ვერ შესრულდა");
+    if (result.path && !adminAssetOptions.includes(result.path)) adminAssetOptions.push(result.path);
+    renderContentEditor();
+    status.textContent = `ფოტო მზად არის: ${result.path}`;
+  } catch (error) {
+    status.textContent = error.message || "ატვირთვა ვერ შესრულდა";
+  } finally {
+    input.value = "";
+  }
 }
 
 function getContentPath(path) {
