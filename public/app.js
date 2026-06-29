@@ -1301,7 +1301,7 @@ function exportContentManager() {
     type: "clinic-content-backup",
     exportedAt,
     app: {
-      name: adminBuildInfo.appName || "virera-plumbing-store",
+      name: "virera-clinic-demo",
       version: adminBuildInfo.version || adminBuildInfo.appVersion || "",
       commit: adminBuildInfo.commit || "",
       buildTime: adminBuildInfo.buildTime || ""

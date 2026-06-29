@@ -51,7 +51,7 @@ const buildInfo = readBuildInfo();
 const runtimeStartedAt = new Date().toISOString();
 const storageDiagnostics = publicStorageDiagnostics();
 const deploymentInfo = {
-  appName: buildInfo.appName || "virera-plumbing-store",
+  appName: buildInfo.appName || "virera-clinic-demo",
   commit: buildInfo.commit || process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || "local",
   branch: buildInfo.branch || process.env.RENDER_GIT_BRANCH || process.env.GIT_BRANCH || "local",
   appVersion: buildInfo.appVersion || buildInfo.version || "1.0.0",
@@ -104,6 +104,7 @@ async function handleApi(req, res, url) {
   const body = ["POST", "PATCH", "PUT"].includes(req.method) && !isMediaUpload ? await readJson(req) : {};
   if (req.method === "GET" && url.pathname === "/api/deployment") return sendDeploymentJson(res);
   if (req.method === "GET" && url.pathname === "/api/health") return sendNoStoreJson(res, 200, { ok: true, ...deploymentInfo });
+  if (isPublicLegacyApiRoute(req, url)) return legacyApiDisabled(res);
   if (req.method === "GET" && url.pathname === "/api/config") return sendJson(res, 200, storeConfig);
   if (req.method === "GET" && url.pathname === "/api/content") return sendNoStoreJson(res, 200, { content: clinicContentOverrides() });
   if (req.method === "GET" && url.pathname === "/api/admin/session") return adminSessionRoute(req, res);
@@ -118,6 +119,7 @@ async function handleApi(req, res, url) {
   if (req.method === "POST" && url.pathname === "/api/admin/appointments/cleanup-smoke") return sendJson(res, 200, { success: true, removed: cleanupSmokeAppointmentRequests() });
   if (req.method === "GET" && url.pathname === "/api/admin/appointments") return sendJson(res, 200, allAppointmentRequests(Object.fromEntries(url.searchParams)));
   if (req.method === "PATCH" && url.pathname.match(/^\/api\/admin\/appointments\/\d+\/status$/)) return appointmentStatusRoute(res, Number(url.pathname.split("/")[4]), body);
+  if (isLegacyApiRoute(req, url)) return legacyApiDisabled(res);
   if (req.method === "GET" && url.pathname === "/api/admin/products") return sendJson(res, 200, adminProducts(Object.fromEntries(url.searchParams)));
   if (req.method === "POST" && url.pathname === "/api/admin/products") return adminCreateProductRoute(res, body);
   if (req.method === "POST" && url.pathname === "/api/admin/products/import") return adminImportProductsRoute(res, body);
@@ -150,6 +152,31 @@ async function handleApi(req, res, url) {
   if (req.method === "POST" && url.pathname === "/api/operator-request") return operatorRoute(res, body);
   if (req.method === "POST" && url.pathname === "/api/chat") return chatRoute(res, body);
   return sendJson(res, 404, { error: "API route not found" });
+}
+
+function isLegacyApiRoute(req, url) {
+  const path = url.pathname;
+  if (isPublicLegacyApiRoute(req, url)) return true;
+  if (path === "/api/admin/products" || path === "/api/admin/products/import") return true;
+  if (path.match(/^\/api\/admin\/products\/\d+$/)) return true;
+  return false;
+}
+
+function isPublicLegacyApiRoute(req, url) {
+  const path = url.pathname;
+  if (path === "/api/config" || path === "/api/categories" || path === "/api/brands") return true;
+  if (path === "/api/contact" || path === "/api/operator-request" || path === "/api/chat") return true;
+  if (path === "/api/products" || path.startsWith("/api/products/")) return true;
+  if (path === "/api/orders" || path.match(/^\/api\/orders\/\d+\/status$/)) return true;
+  if (path === "/api/customers" || path === "/api/contact-messages") return true;
+  return false;
+}
+
+function legacyApiDisabled(res) {
+  return sendJson(res, 410, {
+    success: false,
+    message: "Legacy ecommerce API is disabled for the clinic demo."
+  });
 }
 
 function filterProducts(url) {

@@ -98,25 +98,11 @@ http://localhost:3000/#/admin
 
 The admin area requires `ADMIN_PASSWORD` and manages appointment requests. See `ADMIN_ACCESS.md` for local and Render setup.
 
-## Legacy Plumbing Store Notes
+## Legacy Prototype Notes
 
-The repo still contains legacy ecommerce database tables, backend helpers, package naming, and Render service naming from the earlier plumbing-store prototype. These are not shown on the current public clinic homepage. Avoid renaming deployment resources casually because Render/GitHub deployment wiring depends on them.
+The current app is a clinic demo. Public ecommerce/product/order/chat endpoints from the earlier prototype are disabled and return `410`.
 
-Legacy admin CSV import accepted these columns:
-
-```text
-SKU,name,category,brand,description,price,salePrice,stock,images,attributes,status
-```
-
-Notes:
-
-- `SKU` is required and unique.
-- Existing SKU updates the product.
-- New SKU creates a product.
-- Duplicate SKU inside the uploaded file is skipped.
-- Bad rows are skipped and reported.
-- `price` is the current price.
-- `salePrice` is used as the comparison/old price.
+Some legacy database tables and backend helpers remain in the repo to avoid a risky data/schema refactor during the demo cleanup. They are not used by the public clinic UI. Keep Render service names, DNS targets, and GitHub deployment wiring unchanged unless a future migration explicitly covers those resources.
 
 ## Render Deployment
 

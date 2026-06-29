@@ -39,8 +39,8 @@ These routes require an authenticated admin session:
 
 - `GET /api/admin/appointments`
 - `PATCH /api/admin/appointments/:id/status`
-- legacy admin product routes under `/api/admin/`
-- legacy admin list/update routes such as orders, customers, contact messages, and stock updates
+
+Legacy ecommerce/admin product APIs are disabled for the clinic demo. They should stay disabled unless a future scoped migration reintroduces them for a confirmed clinic workflow.
 
 The public `POST /api/appointments` route remains open.
 
