@@ -85,26 +85,6 @@ nav a {
   font-size: 14px;
 }
 nav a:hover { color: var(--teal-dark); background: rgba(22,163,163,.09); }
-.menu-toggle {
-  display: none;
-  width: 42px;
-  height: 42px;
-  padding: 0;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: white;
-  color: var(--text);
-  align-content: center;
-  gap: 4px;
-  place-items: center;
-  cursor: pointer;
-}
-.menu-toggle span:not(.sr-only) {
-  width: 18px;
-  height: 2px;
-  border-radius: 999px;
-  background: currentColor;
-}
 
 .btn {
   display: inline-flex;
@@ -132,12 +112,11 @@ nav a:hover { color: var(--teal-dark); background: rgba(22,163,163,.09); }
 }
 .btn.compact { min-height: 42px; padding-inline: 15px; white-space: normal; }
 
-.hero { padding: 78px 0 60px; }
+.hero { padding: 52px 0 60px; }
 .hero-grid {
   display: grid;
-  grid-template-columns: minmax(0, .92fr) minmax(360px, 1.08fr);
-  gap: 44px;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
 }
 .hero-copy { display: grid; align-content: center; }
 .eyebrow {
@@ -187,7 +166,7 @@ h1, h2, h3, p, a, span, b { overflow-wrap: anywhere; }
 }
 .hero-slides {
   position: relative;
-  min-height: 390px;
+  min-height: 520px;
 }
 .hero-slide {
   position: absolute;
@@ -196,7 +175,7 @@ h1, h2, h3, p, a, span, b { overflow-wrap: anywhere; }
   align-items: end;
   opacity: 0;
   transform: translateX(10px);
-  transition: opacity .55s ease, transform .55s ease;
+  transition: opacity .7s ease, transform .7s ease;
   pointer-events: none;
 }
 .hero-slide.active {
@@ -211,11 +190,20 @@ h1, h2, h3, p, a, span, b { overflow-wrap: anywhere; }
   position: absolute;
   inset: 0;
 }
+.slide-consultation img { object-position: center center; }
+.slide-reception img { object-position: 58% center; }
+.slide-diagnostics img { object-position: 42% center; }
 .hero-slide::after {
   content: "";
   position: absolute;
   inset: 0;
   background: linear-gradient(180deg, rgba(16,34,49,.02), rgba(16,34,49,.34));
+}
+.slide-reception::after {
+  background: linear-gradient(115deg, rgba(255,255,255,.08), rgba(16,34,49,.34));
+}
+.slide-diagnostics::after {
+  background: linear-gradient(145deg, rgba(22,163,163,.18), rgba(16,34,49,.38));
 }
 .slide-caption {
   position: relative;
@@ -226,7 +214,10 @@ h1, h2, h3, p, a, span, b { overflow-wrap: anywhere; }
   background: rgba(255,255,255,.9);
   border: 1px solid rgba(255,255,255,.9);
   box-shadow: 0 20px 50px rgba(16,34,49,.16);
+  transform: translateY(8px);
+  transition: transform .7s ease, opacity .7s ease;
 }
+.hero-slide.active .slide-caption { transform: translateY(0); }
 .slide-caption b, .slide-caption span { display: block; }
 .slide-caption span { color: var(--muted); }
 .slide-dots {
@@ -251,26 +242,6 @@ h1, h2, h3, p, a, span, b { overflow-wrap: anywhere; }
   border-radius: 999px;
   background: white;
 }
-.hero-visual-notes {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  border-top: 1px solid var(--line);
-  background: white;
-}
-.hero-visual-notes article {
-  display: grid;
-  gap: 4px;
-  padding: 14px 16px;
-  border-right: 1px solid var(--line);
-}
-.hero-visual-notes article:last-child { border-right: 0; }
-.hero-visual-notes b { font-size: 14px; }
-.hero-visual-notes span {
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.45;
-}
-
 .section { padding: 78px 0; }
 .section-head {
   max-width: 720px;
@@ -591,8 +562,6 @@ textarea { min-height: 112px; resize: vertical; }
 }
 .login-card .build-marker { color: var(--muted); }
 
-.mobile-booking-bar { display: none; }
-
 .assistant-widget {
   position: fixed;
   right: 22px;
@@ -710,106 +679,71 @@ textarea { min-height: 112px; resize: vertical; }
 }
 
 @media (max-width: 640px) {
-  body { padding-bottom: 96px; }
+  body { padding-bottom: 0; }
   .container { width: min(100% - 24px, 1160px); }
   .site-header { position: sticky; top: 0; }
   .header-grid {
-    position: relative;
     grid-template-columns: minmax(0, 1fr) auto;
-    min-height: 60px;
-    gap: 10px;
-    padding: 10px 0;
+    gap: 8px 10px;
+    min-height: 0;
+    padding: 9px 0 8px;
   }
-  .brand { min-width: 0; max-width: calc(100vw - 92px); }
+  .brand { min-width: 0; max-width: calc(100vw - 174px); }
   .brand-mark { width: 36px; height: 36px; border-radius: 12px; font-size: 23px; flex: 0 0 auto; }
   .brand strong { font-size: 15px; }
   .brand small { display: none; }
-  .header-cta { display: none; }
-  .menu-toggle { display: grid; }
+  .header-cta {
+    grid-column: 2;
+    grid-row: 1;
+    display: inline-flex;
+    min-height: 36px;
+    max-width: 138px;
+    padding: 8px 10px;
+    font-size: 12px;
+    line-height: 1.15;
+    text-align: center;
+    box-shadow: none;
+  }
   nav {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: calc(100% + 8px);
-    z-index: 25;
-    display: none;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    grid-row: 2;
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 6px;
     order: initial;
-    padding: 10px;
+    overflow-x: auto;
+    padding: 2px 0 3px;
+    scrollbar-width: none;
+  }
+  nav::-webkit-scrollbar { display: none; }
+  nav a {
+    flex: 0 0 auto;
+    min-height: 32px;
+    padding: 7px 10px;
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    background: rgba(255,255,255,.98);
-    box-shadow: 0 18px 44px rgba(16,34,49,.14);
+    background: rgba(247,252,255,.92);
+    font-size: 12px;
+    white-space: nowrap;
   }
-  nav.open { display: grid; }
-  nav a {
-    display: grid;
-    place-items: center;
-    min-height: 38px;
-    padding: 8px;
-    border-radius: var(--radius);
-    background: #f7fcff;
-    font-size: 13px;
-    text-align: center;
-  }
-  h1 { font-size: 32px; line-height: 1.14; }
-  .hero-copy p { font-size: 16px; }
   .benefit-grid, .service-grid, .doctor-grid, .footer-grid, .appointment-form { grid-template-columns: 1fr; }
-  .hero-stats {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
-  }
-  .hero-stats span {
-    padding: 8px 6px;
-    font-size: 11px;
-    line-height: 1.35;
-  }
-  .hero-stats b { font-size: 17px; }
   .wide { grid-column: auto; }
   .section { padding: 52px 0; }
-  .hero { padding: 30px 0 44px; }
-  .hero-actions { margin: 20px 0; }
-  .hero-actions .btn { width: 100%; min-width: 0; }
-  .hero-slides { min-height: 290px; }
+  .hero { padding: 14px 0 44px; }
+  .hero-slides { min-height: min(520px, calc(100vh - 156px)); }
   .service-card { grid-template-rows: none; }
   .appointment-form { padding: 18px; gap: 16px; }
   .price-list div { display: grid; }
   .section-head.split { display: block; }
   .hero-visual { border-radius: var(--radius); }
   .slide-caption { margin: 12px; padding: 14px; }
+  .slide-caption b { font-size: 17px; line-height: 1.25; }
+  .slide-caption span { font-size: 13px; line-height: 1.45; }
   .slide-dots { left: 12px; top: 12px; }
-  .hero-visual-notes { grid-template-columns: 1fr; }
-  .hero-visual-notes article {
-    padding: 12px 14px;
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
-  }
-  .hero-visual-notes article:last-child { border-bottom: 0; }
-  .mobile-booking-bar {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 30;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 8px;
-    padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
-    border-top: 1px solid var(--line);
-    background: rgba(255,255,255,.94);
-    backdrop-filter: blur(16px);
-    box-shadow: 0 -16px 44px rgba(31,132,216,.12);
-  }
-  .mobile-booking-bar .btn {
-    min-height: 42px;
-    padding: 9px 12px;
-    font-size: 14px;
-    box-shadow: none;
-  }
   .assistant-widget {
     right: 12px;
-    bottom: 74px;
+    bottom: 18px;
   }
   .assistant-toggle {
     width: 48px;
@@ -827,7 +761,7 @@ textarea { min-height: 112px; resize: vertical; }
     right: -2px;
     bottom: 58px;
     width: min(360px, calc(100vw - 24px));
-    max-height: min(620px, calc(100vh - 174px));
+    max-height: min(620px, calc(100vh - 104px));
     overflow: auto;
   }
   .assistant-form { grid-template-columns: 1fr; }

@@ -2,8 +2,8 @@ const clinicContent = {
   clinicName: "მედ ამბულატორია",
   shortSlogan: "დემო კლინიკური ვებსაიტი",
   heroLabel: "ამბულატორიული კლინიკა",
-  heroHeadline: "სანდო და მშვიდი ამბულატორიული ზრუნვა ერთ სივრცეში",
-  heroDescription: "დემო გვერდი აჩვენებს, როგორ შეიძლება გამოიყურებოდეს თანამედროვე კლინიკის ვებსაიტი: მკაფიო სერვისები, მარტივი ვიზიტის მოთხოვნა და პროფესიონალური საკონტაქტო ბლოკი.",
+  heroHeadline: "",
+  heroDescription: "",
   aboutLabel: "რატომ ჩვენ",
   aboutHeadline: "კლინიკის გვერდი, სადაც პაციენტს საჭირო ინფორმაცია სწრაფად ხვდება",
   aboutText: "ტექსტები დემო მონაცემებია და საბოლოო გაშვებამდე უნდა ჩანაცვლდეს კლინიკის ოფიციალური ინფორმაციით.",
@@ -70,19 +70,21 @@ const clinicContent = {
   heroSlides: [
     {
       title: "ექიმისა და პაციენტის მშვიდი კონსულტაცია",
-      text: "დემო ფოტო რეალური კლინიკის სურათით ჩანაცვლდება.",
+      text: "მშვიდი სივრცე პირველი ვიზიტისა და გეგმიური კონსულტაციისთვის.",
       image: "/assets/clinic-hero.png",
       tone: "consultation"
-    }
-  ],
-  heroHighlights: [
+    },
     {
       title: "ორგანიზებული მიღება",
-      text: "დემო ბლოკი რეალური მისაღების ფოტოსა და დეტალებით ჩანაცვლდება."
+      text: "კომპაქტური გზა სერვისამდე, ექიმამდე და სასურველ დრომდე.",
+      image: "/assets/clinic-hero.png",
+      tone: "reception"
     },
     {
       title: "სერვისები ერთ სივრცეში",
-      text: "მიმართულებები და კვლევები მოცემულია demo-safe ფორმით."
+      text: "დემო მიმართულებები და კვლევები წარმოდგენილია მკაფიოდ და უსაფრთხოდ.",
+      image: "/assets/clinic-hero.png",
+      tone: "diagnostics"
     }
   ],
   assistantTitle: "კლინიკის ასისტენტი",
@@ -155,10 +157,6 @@ function renderClinic() {
           <span class="brand-mark">+</span>
           <span><strong>${clinicContent.clinicName}</strong><small>${clinicContent.demoVersionNote}</small></span>
         </a>
-        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="siteNav">
-          <span></span><span></span><span></span>
-          <span class="sr-only">მენიუ</span>
-        </button>
         <nav id="siteNav" aria-label="მთავარი მენიუ">
           <a href="#top">მთავარი</a>
           <a href="#about">ჩვენს შესახებ</a>
@@ -174,18 +172,6 @@ function renderClinic() {
     <main id="top">
       <section class="hero">
         <div class="container hero-grid">
-          <div class="hero-copy">
-            <span class="eyebrow">${clinicContent.heroLabel}</span>
-            <h1>${clinicContent.heroHeadline}</h1>
-            <p>${clinicContent.heroDescription}</p>
-            <div class="hero-actions">
-              <a class="btn" href="#appointment">${clinicContent.primaryCta}</a>
-              <a class="btn ghost" href="#services">${clinicContent.secondaryCta}</a>
-            </div>
-            <div class="hero-stats" aria-label="კლინიკის მაჩვენებლები">
-              ${clinicContent.heroStats.map(([value, label]) => `<span><b>${value}</b> ${label}</span>`).join("")}
-            </div>
-          </div>
           <div class="hero-visual hero-slideshow" id="heroSlideshow" aria-label="კლინიკის დემო სლაიდები">
             <div class="hero-slides">
               ${clinicContent.heroSlides.map((slide, index) => `<article class="hero-slide slide-${slide.tone} ${index === 0 ? "active" : ""}" aria-hidden="${index === 0 ? "false" : "true"}">
@@ -196,11 +182,8 @@ function renderClinic() {
                 </div>
               </article>`).join("")}
             </div>
-            ${clinicContent.heroSlides.length > 1 ? `<div class="slide-dots" aria-label="სლაიდების არჩევა">
+            <div class="slide-dots" aria-label="სლაიდების არჩევა">
               ${clinicContent.heroSlides.map((slide, index) => `<button type="button" class="${index === 0 ? "active" : ""}" data-slide="${index}" aria-label="${slide.title}" aria-pressed="${index === 0 ? "true" : "false"}"></button>`).join("")}
-            </div>` : ""}
-            <div class="hero-visual-notes">
-              ${clinicContent.heroHighlights.map((item) => `<article><b>${item.title}</b><span>${item.text}</span></article>`).join("")}
             </div>
           </div>
         </div>
@@ -312,11 +295,6 @@ function renderClinic() {
       </div>
     </footer>
 
-    <div class="mobile-booking-bar" aria-label="სწრაფი მოქმედებები">
-      <a class="btn" href="#appointment">${clinicContent.primaryCta}</a>
-      <a class="btn ghost" href="tel:${clinicContent.phoneHref}">დარეკვა</a>
-    </div>
-
     <div class="assistant-widget" id="clinicAssistant">
       <button class="assistant-toggle" type="button" aria-expanded="false" aria-controls="assistantPanel">${clinicContent.assistantButton}</button>
       <section class="assistant-panel" id="assistantPanel" aria-label="${clinicContent.assistantTitle}" hidden>
@@ -346,7 +324,6 @@ function renderClinic() {
 }
 
 function bindClinicUi() {
-  bindMobileMenu();
   bindHeroSlideshow();
   bindAssistant();
 
@@ -369,21 +346,6 @@ function bindClinicUi() {
   });
 
   document.querySelector("#appointmentForm").addEventListener("submit", submitAppointment);
-}
-
-function bindMobileMenu() {
-  const toggle = document.querySelector(".menu-toggle");
-  const nav = document.querySelector("#siteNav");
-  if (!toggle || !nav) return;
-  const setOpen = (open) => {
-    nav.classList.toggle("open", open);
-    toggle.setAttribute("aria-expanded", open ? "true" : "false");
-  };
-  toggle.addEventListener("click", () => setOpen(!nav.classList.contains("open")));
-  nav.querySelectorAll("a").forEach((link) => link.addEventListener("click", () => setOpen(false)));
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") setOpen(false);
-  });
 }
 
 function bindHeroSlideshow() {
