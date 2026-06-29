@@ -25,6 +25,14 @@ body {
 a { color: inherit; text-decoration: none; }
 img { display: block; max-width: 100%; }
 button, input, select, textarea { font: inherit; }
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(31,132,216,.36);
+  outline-offset: 3px;
+}
 .container { width: min(1160px, calc(100% - 40px)); margin: 0 auto; }
 
 .site-header {
