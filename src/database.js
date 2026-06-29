@@ -581,7 +581,7 @@ export function allAppointmentRequests(filters = {}) {
   const status = String(filters.status || "").trim();
   const service = String(filters.service || "").trim().toLowerCase();
   return db.prepare("SELECT * FROM appointment_requests ORDER BY created_at DESC").all().map(mapAppointment).filter((item) => {
-    const matchesQ = !q || `${item.fullName} ${item.phone}`.toLowerCase().includes(q);
+    const matchesQ = !q || `${item.fullName} ${item.phone} ${item.service} ${item.doctor}`.toLowerCase().includes(q);
     const matchesStatus = !status || item.status === status;
     const matchesService = !service || item.service.toLowerCase().includes(service);
     return matchesQ && matchesStatus && matchesService;

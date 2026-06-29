@@ -111,6 +111,8 @@ let adminAssetOptions = ["/assets/clinic-hero.png"];
 let adminContentOverrides = {};
 let adminBuildInfo = {};
 let adminStorageInfo = {};
+let adminAppointments = [];
+let activeAdminTab = "overview";
 
 function deepCopy(value) {
   return JSON.parse(JSON.stringify(value));
@@ -625,64 +627,128 @@ async function adminLogout() {
 }
 
 function renderAdminDashboard() {
-  document.title = "ჩაწერის მოთხოვნები | მედ ამბულატორია";
+  document.title = "ადმინი | მედ ამბულატორია";
   app.innerHTML = `
     <main class="admin-page">
       <section class="admin-shell">
         <div class="admin-head">
           <div>
             <span class="eyebrow">ადმინი</span>
-            <h1>ჩაწერის მოთხოვნები</h1>
-            <p>მინიმალური ამბულატორიული ჩაწერის მოთხოვნები. აქ არ ინახება დიაგნოზი, პირადი ნომერი, ისტორია ან ფაილები.</p>
+            <h1>მართვის პანელი</h1>
+            <p>ჩაწერის მოთხოვნები და საიტის ტექსტები ერთ მარტივ სივრცეში. აქ არ ინახება დიაგნოზი, პირადი ნომერი, ისტორია ან ფაილები.</p>
           </div>
           <div class="admin-actions">
             <a class="btn ghost compact" href="/">საიტზე დაბრუნება</a>
-            <button class="btn ghost compact" id="adminCleanup" type="button">ტესტების გასუფთავება</button>
             <button class="btn ghost compact" id="adminLogout" type="button">გასვლა</button>
           </div>
         </div>
-        <section class="storage-status-card" id="storageStatus">
-          <span class="eyebrow">Storage</span>
-          <h2>საცავის სტატუსი</h2>
-          <p>იტვირთება...</p>
-        </section>
-        <section class="content-manager" id="contentManager">
+        <nav class="admin-tabs" aria-label="ადმინის სექციები">
+          ${adminTabButton("overview", "მთავარი")}
+          ${adminTabButton("appointments", "მოთხოვნები")}
+          ${adminTabButton("content", "კონტენტი")}
+          ${adminTabButton("media", "მედია")}
+          ${adminTabButton("backup", "Backup")}
+          ${adminTabButton("settings", "პარამეტრები")}
+        </nav>
+        <section class="admin-panel" data-admin-panel="overview">
           <div class="section-head split">
             <div>
-              <span class="eyebrow">ადმინი</span>
+              <span class="eyebrow">მთავარი</span>
+              <h2>დღის მოკლე სურათი</h2>
+              <p>ყველაზე საჭირო მოქმედებები სწრაფად, ზედმეტი ტექნიკური დეტალების გარეშე.</p>
+            </div>
+            ${buildMarker()}
+          </div>
+          <div id="adminOverview" class="overview-grid">
+            <div class="empty-state">იტვირთება...</div>
+          </div>
+        </section>
+        <section class="admin-panel" data-admin-panel="appointments" hidden>
+          <div class="section-head split">
+            <div>
+              <span class="eyebrow">ვიზიტის მოთხოვნები</span>
+              <h2>ჩაწერის მოთხოვნები</h2>
+              <p>სახელი, ტელეფონი, სერვისი და სასურველი დრო. სამედიცინო ისტორია ან დიაგნოზი არ გროვდება.</p>
+            </div>
+            <button class="btn ghost compact" id="adminCleanup" type="button">ტესტების გასუფთავება</button>
+          </div>
+          <div class="admin-filters">
+            <input id="adminSearch" placeholder="სახელი, ტელეფონი ან სერვისი">
+            <select id="adminStatus">
+              <option value="">ყველა სტატუსი</option>
+              ${Object.entries(statusLabels).map(([value, label]) => `<option value="${value}">${label}</option>`).join("")}
+            </select>
+            <select id="adminService">
+              <option value="">ყველა სერვისი</option>
+              ${services.map(([title]) => `<option>${title}</option>`).join("")}
+            </select>
+            <button class="btn compact" id="adminApply">ფილტრაცია</button>
+          </div>
+          <div id="adminStatusText" class="admin-status-text"></div>
+          <div id="appointmentsTable"></div>
+        </section>
+        <section class="content-manager admin-panel" id="contentManager" data-admin-panel="content" hidden>
+          <div class="section-head split">
+            <div>
+              <span class="eyebrow">საიტის კონტენტი</span>
               <h2>საიტის კონტენტი</h2>
-              <p>ფოტოების ატვირთვის მუდმივი სისტემა დაემატება storage-ის გადაწყვეტილების შემდეგ.</p>
+              <p>შეცვალეთ საჯარო გვერდის ძირითადი ტექსტები, სერვისები, ექიმები, ფასები და კონტაქტი.</p>
             </div>
             <div class="content-toolbar">
               <button class="btn compact" id="contentSave" type="button">შენახვა</button>
-              <button class="btn ghost compact" id="contentExport" type="button">კონტენტის ექსპორტი</button>
-              <button class="btn ghost compact" id="contentImport" type="button">კონტენტის იმპორტი</button>
               <button class="btn ghost compact" id="contentReset" type="button">დემო ტექსტზე დაბრუნება</button>
             </div>
           </div>
           <div class="admin-note">
-            კონტენტი ინახება საიტის მონაცემთა ბაზაში/storage-ში. მნიშვნელოვანი განახლების წინ ჩამოტვირთეთ JSON backup. მუდმივი ფოტო ატვირთვა საჭიროებს ცალკე storage-ის გადაწყვეტას.
+            ცვლილების შემდეგ დააჭირეთ შენახვას. დიდი ცვლილების წინ Backup სექციიდან ჩამოტვირთეთ ასლი.
           </div>
-          <input id="contentImportFile" type="file" accept="application/json,.json" hidden>
           <div id="contentStatus" class="admin-status-text"></div>
           <div id="contentEditor" class="content-editor">
             <div class="empty-state">იტვირთება...</div>
           </div>
         </section>
-        <div class="admin-filters">
-          <input id="adminSearch" placeholder="სახელი ან ტელეფონი">
-          <select id="adminStatus">
-            <option value="">ყველა სტატუსი</option>
-            ${Object.entries(statusLabels).map(([value, label]) => `<option value="${value}">${label}</option>`).join("")}
-          </select>
-          <select id="adminService">
-            <option value="">ყველა სერვისი</option>
-            ${services.map(([title]) => `<option>${title}</option>`).join("")}
-          </select>
-          <button class="btn compact" id="adminApply">ფილტრაცია</button>
-        </div>
-        <div id="adminStatusText" class="admin-status-text"></div>
-        <div id="appointmentsTable"></div>
+        <section class="admin-panel" data-admin-panel="media" hidden>
+          <div class="section-head split">
+            <div>
+              <span class="eyebrow">მედია / ფოტოები</span>
+              <h2>ფოტოების არჩევა</h2>
+              <p>დემო ვერსიაში ფოტოები აირჩევა არსებული ფაილებიდან. რეალური ატვირთვა დაემატება storage-ის ჩართვის შემდეგ.</p>
+            </div>
+          </div>
+          <div id="mediaPanel">
+            <div class="empty-state">იტვირთება...</div>
+          </div>
+        </section>
+        <section class="admin-panel" data-admin-panel="backup" hidden>
+          <div class="section-head split">
+            <div>
+              <span class="eyebrow">Backup / Restore</span>
+              <h2>კონტენტის ასლი</h2>
+              <p>Backup შეინახეთ დიდი ცვლილებების ან განახლების წინ.</p>
+            </div>
+            <div class="content-toolbar">
+              <button class="btn compact" id="contentExport" type="button">Export backup</button>
+              <button class="btn ghost compact" id="contentImport" type="button">Import backup</button>
+            </div>
+          </div>
+          <input id="contentImportFile" type="file" accept="application/json,.json" hidden>
+          <div class="admin-note">Export ფაილი შეიცავს მხოლოდ საიტის კონტენტს და build ინფორმაციას; ჩაწერის მოთხოვნები, პაროლები და სესიები არ შედის.</div>
+          <div id="backupStatus" class="admin-status-text"></div>
+        </section>
+        <section class="admin-panel" data-admin-panel="settings" hidden>
+          <div class="section-head split">
+            <div>
+              <span class="eyebrow">პარამეტრები</span>
+              <h2>საცავი და ვერსია</h2>
+              <p>ტექნიკური სტატუსი მოკლედ. დეტალური ინსტრუქცია არის STORAGE_AND_MEDIA_GUIDE.md-ში.</p>
+            </div>
+          </div>
+          <section class="storage-status-card" id="storageStatus">
+            <span class="eyebrow">Storage</span>
+            <h2>საცავის სტატუსი</h2>
+            <p>იტვირთება...</p>
+          </section>
+        </section>
       </section>
     </main>
   `;
@@ -690,7 +756,14 @@ function renderAdminDashboard() {
   loadAppointments();
 }
 
+function adminTabButton(tab, label) {
+  return `<button class="admin-tab ${activeAdminTab === tab ? "active" : ""}" type="button" data-admin-tab="${tab}">${escapeHtml(label)}</button>`;
+}
+
 function bindAdmin() {
+  document.querySelectorAll("[data-admin-tab]").forEach((button) => {
+    button.addEventListener("click", () => setAdminTab(button.dataset.adminTab));
+  });
   document.querySelector("#adminCleanup").addEventListener("click", cleanupSmokeAppointments);
   document.querySelector("#adminLogout").addEventListener("click", adminLogout);
   document.querySelector("#adminApply").addEventListener("click", loadAppointments);
@@ -703,6 +776,17 @@ function bindAdmin() {
     if (event.key === "Enter") loadAppointments();
   });
   loadContentManager();
+  setAdminTab(activeAdminTab);
+}
+
+function setAdminTab(tab) {
+  activeAdminTab = tab || "overview";
+  document.querySelectorAll("[data-admin-panel]").forEach((panel) => {
+    panel.hidden = panel.dataset.adminPanel !== activeAdminTab;
+  });
+  document.querySelectorAll("[data-admin-tab]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.adminTab === activeAdminTab);
+  });
 }
 
 async function loadContentManager() {
@@ -717,6 +801,8 @@ async function loadContentManager() {
     mergeClinicContent(result.content || {});
     adminContentDraft = contentPayloadFromCurrent();
     renderStorageStatus();
+    renderAdminOverview();
+    renderMediaPanel();
     renderContentEditor();
     status.textContent = "";
   } catch (error) {
@@ -741,6 +827,50 @@ function renderStorageStatus() {
   `;
 }
 
+function renderAdminOverview() {
+  const target = document.querySelector("#adminOverview");
+  if (!target) return;
+  const today = new Date().toISOString().slice(0, 10);
+  const counts = adminAppointments.reduce((summary, item) => {
+    summary.total += 1;
+    summary[item.status] = (summary[item.status] || 0) + 1;
+    if (String(item.createdAt || "").slice(0, 10) === today) summary.today += 1;
+    return summary;
+  }, { total: 0, today: 0, new: 0, contacted: 0, confirmed: 0, cancelled: 0, completed: 0 });
+  target.innerHTML = `
+    <div class="overview-card"><span>დღეს</span><b>${counts.today}</b><small>ახალი ჩანაწერი დღეს</small></div>
+    <div class="overview-card"><span>ახალი</span><b>${counts.new}</b><small>დასაკავშირებელი მოთხოვნა</small></div>
+    <div class="overview-card"><span>დაკავშირებული</span><b>${counts.contacted}</b><small>შემდეგი ნაბიჯი დარჩა</small></div>
+    <div class="overview-card"><span>დადასტურებული</span><b>${counts.confirmed}</b><small>ვიზიტი შეთანხმებულია</small></div>
+    <div class="overview-actions">
+      <button class="btn compact" type="button" data-overview-tab="appointments">ახალი მოთხოვნის ნახვა</button>
+      <button class="btn ghost compact" type="button" data-overview-tab="content">საიტის კონტენტის შეცვლა</button>
+      <button class="btn ghost compact" type="button" data-overview-export>Backup export</button>
+    </div>
+    <div class="overview-note">${adminStorageInfo.persistentStorageWarning ? "სანამ მუდმივი საცავი ჩაირთვება, დიდი ცვლილების წინ შეინახეთ backup." : "Backup გამოიყენეთ მნიშვნელოვანი განახლების წინ."}</div>
+  `;
+  target.querySelectorAll("[data-overview-tab]").forEach((button) => {
+    button.addEventListener("click", () => setAdminTab(button.dataset.overviewTab));
+  });
+  target.querySelector("[data-overview-export]")?.addEventListener("click", exportContentManager);
+}
+
+function renderMediaPanel() {
+  const target = document.querySelector("#mediaPanel");
+  if (!target) return;
+  target.innerHTML = `
+    ${mediaUploadPanel()}
+    <div class="asset-gallery">
+      ${adminAssetOptions.map((asset) => `<article class="asset-card">
+        <img src="${escapeHtml(asset)}" alt="">
+        <span>${escapeHtml(asset)}</span>
+      </article>`).join("")}
+    </div>
+  `;
+  const uploadInput = target.querySelector("#mediaUploadFile");
+  if (uploadInput) uploadInput.addEventListener("change", uploadMediaAsset);
+}
+
 function renderContentEditor() {
   const editor = document.querySelector("#contentEditor");
   if (!editor || !adminContentDraft) return;
@@ -754,7 +884,6 @@ function renderContentEditor() {
       ${sectionResetButton("contact", "კონტაქტის reset")}
       ${sectionResetButton("footer-consent", "ფუტერი/თანხმობა reset")}
     </div>
-    ${mediaUploadPanel()}
     <div class="content-grid">
       ${contentCard("ძირითადი", [
         inputField("კლინიკის სახელი", "siteInfo.clinicName"),
@@ -762,26 +891,26 @@ function renderContentEditor() {
         inputField("ვერსიის ტექსტი", "siteInfo.demoVersionNote"),
         inputField("მთავარი ღილაკი", "siteInfo.primaryCta"),
         inputField("მეორე ღილაკი", "siteInfo.secondaryCta")
-      ].join(""))}
+      ].join(""), "სახელი, მოკლე სლოგანი და მთავარი ღილაკების ტექსტები.")}
       ${contentCard("კონტაქტი", [
         inputField("ტელეფონი", "contact.phone"),
         inputField("ტელეფონი ბმულისთვის", "contact.phoneHref"),
         inputField("ელფოსტა", "contact.email"),
         inputField("მისამართი", "contact.address"),
         inputField("სამუშაო საათები", "contact.workingHours")
-      ].join(""))}
+      ].join(""), "საჯარო საკონტაქტო ინფორმაცია და სამუშაო საათები.")}
       ${contentCard("ფუტერი და თანხმობა", [
         textField("ფუტერის ტექსტი", "footer.footerText"),
         inputField("privacy ბმულის ტექსტი", "footer.privacyLinkText"),
         textField("privacy შენიშვნა", "consentText.privacyNote"),
         textField("თანხმობის ტექსტი", "consentText.consentCopy"),
         textField("კომენტარის placeholder", "consentText.commentPlaceholder")
-      ].join(""))}
+      ].join(""), "მოკლე განმარტებები ფორმასთან და footer-ში.")}
     </div>
-    ${listSection("heroSlides", "სლაიდერი", "სლაიდის დამატება", ["title", "text", "image", "tone"], ["სათაური", "აღწერა", "სურათი", "ტონი"])}
-    ${listSection("services", "სერვისები", "სერვისის დამატება", ["title", "description", "price"], ["სათაური", "აღწერა", "ფასი"])}
-    ${listSection("doctors", "ექიმები", "ექიმის დამატება", ["name", "specialty", "note", "image"], ["სახელი", "სპეციალობა", "შენიშვნა", "სურათი"])}
-    ${listSection("prices", "ფასები", "ფასის დამატება", ["title", "price"], ["სათაური", "ფასი"])}
+    ${listSection("heroSlides", "სლაიდერი", "სლაიდის დამატება", ["title", "text", "image", "tone"], ["სათაური", "აღწერა", "სურათი", "ტონი"], "მთავარი გვერდის ზედა სურათები და მოკლე ტექსტები.")}
+    ${listSection("services", "სერვისები", "სერვისის დამატება", ["title", "description", "price"], ["სათაური", "აღწერა", "ფასი"], "დემო სერვისების სია საჯარო გვერდისთვის.")}
+    ${listSection("doctors", "ექიმები", "ექიმის დამატება", ["name", "specialty", "note", "image"], ["სახელი", "სპეციალობა", "შენიშვნა", "სურათი"], "დემო ექიმების ბლოკი; რეალური მონაცემები მხოლოდ დადასტურების შემდეგ შეიყვანეთ.")}
+    ${listSection("prices", "ფასები", "ფასის დამატება", ["title", "price"], ["სათაური", "ფასი"], "საწყისი ფასების მოკლე სია.")}
   `;
   editor.querySelectorAll("[data-content-path]").forEach((field) => {
     field.addEventListener("input", () => setContentPath(field.dataset.contentPath, field.value));
@@ -799,12 +928,10 @@ function renderContentEditor() {
   editor.querySelectorAll("[data-reset-section]").forEach((button) => {
     button.addEventListener("click", () => resetContentSection(button.dataset.resetSection, button.textContent.trim()));
   });
-  const uploadInput = editor.querySelector("#mediaUploadFile");
-  if (uploadInput) uploadInput.addEventListener("change", uploadMediaAsset);
 }
 
-function contentCard(title, body) {
-  return `<section class="content-card"><h3>${escapeHtml(title)}</h3>${body}</section>`;
+function contentCard(title, body, helper = "") {
+  return `<section class="content-card"><h3>${escapeHtml(title)}</h3>${helper ? `<p>${escapeHtml(helper)}</p>` : ""}${body}</section>`;
 }
 
 function sectionResetButton(section, label) {
@@ -819,11 +946,11 @@ function textField(label, path) {
   return `<label>${escapeHtml(label)}<textarea data-content-path="${escapeHtml(path)}">${escapeHtml(getContentPath(path))}</textarea></label>`;
 }
 
-function listSection(section, title, addLabel, fields, labels) {
+function listSection(section, title, addLabel, fields, labels, helper = "") {
   const items = adminContentDraft[section] || [];
   return `<section class="content-card content-list-card">
     <div class="content-list-head">
-      <h3>${escapeHtml(title)}</h3>
+      <div><h3>${escapeHtml(title)}</h3>${helper ? `<p>${escapeHtml(helper)}</p>` : ""}</div>
       <button class="btn ghost compact" type="button" data-content-action="add" data-section="${section}">${escapeHtml(addLabel)}</button>
     </div>
     <div class="content-list">
@@ -942,9 +1069,9 @@ async function saveContentManager() {
     mergeClinicContent(result.content || {});
     adminContentDraft = contentPayloadFromCurrent();
     renderContentEditor();
-    status.textContent = "კონტენტი შენახულია";
+    status.textContent = "შენახულია";
   } catch (error) {
-    status.textContent = error.message;
+    status.textContent = humanAdminError(error.message);
   }
 }
 
@@ -971,14 +1098,14 @@ function exportContentManager() {
   link.click();
   URL.revokeObjectURL(link.href);
   link.remove();
-  document.querySelector("#contentStatus").textContent = "backup JSON ჩამოიტვირთა";
+  setAdminMessage("backup JSON ჩამოიტვირთა", "backup");
 }
 
 async function importContentManager(event) {
   const input = event.currentTarget;
   const file = input.files?.[0];
   if (!file) return;
-  const status = document.querySelector("#contentStatus");
+  const status = document.querySelector("#backupStatus") || document.querySelector("#contentStatus");
   try {
     if (file.size > 300000) throw new Error("ფაილი ძალიან დიდია");
     const raw = await file.text();
@@ -992,10 +1119,24 @@ async function importContentManager(event) {
     renderContentEditor();
     status.textContent = "კონტენტი იმპორტირებულია";
   } catch (error) {
-    status.textContent = error.message || "იმპორტი ვერ შესრულდა";
+    status.textContent = humanAdminError(error.message) || "იმპორტი ვერ შესრულდა";
   } finally {
     input.value = "";
   }
+}
+
+function setAdminMessage(message, area = "content") {
+  const target = area === "backup" ? document.querySelector("#backupStatus") : document.querySelector("#contentStatus");
+  if (target) target.textContent = message;
+}
+
+function humanAdminError(message = "") {
+  if (/Unsafe content/i.test(message)) return "ტექსტში დაუშვებელი კოდი ან ბმულია.";
+  if (/Image path/i.test(message)) return "სურათის მისამართი უნდა იყოს უსაფრთხო ლოკალური ფაილი.";
+  if (/Too many items/i.test(message)) return "ამ სექციაში ძალიან ბევრი ჩანაწერია.";
+  if (/Unsupported content section/i.test(message)) return "Backup ფაილში უცნობი სექციაა.";
+  if (/Text exceeds/i.test(message)) return "ერთ-ერთი ტექსტი ძალიან გრძელია.";
+  return message;
 }
 
 async function resetContentSection(section, label) {
@@ -1040,6 +1181,7 @@ async function cleanupSmokeAppointments() {
   try {
     const result = await api("/api/admin/appointments/cleanup-smoke", { method: "POST", body: {} });
     text.textContent = `${result.removed || 0} ტესტი გასუფთავდა`;
+    await refreshAppointmentSummary();
     await loadAppointments();
   } catch (error) {
     text.textContent = error.message;
@@ -1058,6 +1200,10 @@ async function loadAppointments() {
   document.querySelector("#adminStatusText").textContent = "იტვირთება...";
   try {
     const rows = await api(`/api/admin/appointments${params.toString() ? `?${params}` : ""}`);
+    if (!params.toString()) {
+      adminAppointments = rows;
+      renderAdminOverview();
+    }
     document.querySelector("#adminStatusText").textContent = `${rows.length} მოთხოვნა`;
     target.innerHTML = appointmentTable(rows);
     target.querySelectorAll("[data-status-id]").forEach((select) => {
@@ -1067,6 +1213,13 @@ async function loadAppointments() {
     document.querySelector("#adminStatusText").textContent = error.message;
     target.innerHTML = "";
   }
+}
+
+async function refreshAppointmentSummary() {
+  try {
+    adminAppointments = await api("/api/admin/appointments");
+    renderAdminOverview();
+  } catch {}
 }
 
 function appointmentTable(rows) {
@@ -1089,6 +1242,7 @@ async function updateStatus(id, status) {
   try {
     await api(`/api/admin/appointments/${id}/status`, { method: "PATCH", body: { status } });
     text.textContent = "სტატუსი განახლდა";
+    refreshAppointmentSummary();
     setTimeout(loadAppointments, 250);
   } catch (error) {
     text.textContent = error.message;
