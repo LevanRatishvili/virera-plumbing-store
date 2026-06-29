@@ -324,7 +324,16 @@ function cleanAssetPath(value) {
 }
 
 function collectClinicAssetOptions() {
-  const fallback = ["/assets/clinic-hero.png", "/assets/plumb-hero.png", "/assets/plumb-lifestyle.png", "/assets/plumb-supplies.png"];
+  const fallback = [
+    "/assets/clinic-consultation.png",
+    "/assets/clinic-reception.png",
+    "/assets/clinic-diagnostics.png",
+    "/assets/doctor-therapist.png",
+    "/assets/doctor-cardiologist.png",
+    "/assets/doctor-pediatrician.png",
+    "/assets/doctor-endocrinologist.png",
+    "/assets/clinic-hero.png"
+  ];
   const assetsDir = join(publicDir, "assets");
   const allowed = new Set();
   const walk = (dir, prefix = "/assets") => {

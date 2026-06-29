@@ -1,60 +1,60 @@
 const clinicContent = {
   clinicName: "მედ ამბულატორია",
-  shortSlogan: "დემო კლინიკური ვებსაიტი",
+  shortSlogan: "ამბულატორიული კლინიკის ვებგვერდი",
   heroLabel: "ამბულატორიული კლინიკა",
   heroHeadline: "",
   heroDescription: "",
   aboutLabel: "რატომ ჩვენ",
-  aboutHeadline: "კლინიკის გვერდი, სადაც პაციენტს საჭირო ინფორმაცია სწრაფად ხვდება",
-  aboutText: "ტექსტები დემო მონაცემებია და საბოლოო გაშვებამდე უნდა ჩანაცვლდეს კლინიკის ოფიციალური ინფორმაციით.",
+  aboutHeadline: "მშვიდი და გასაგები გზა პირველ კონსულტაციამდე",
+  aboutText: "ვებგვერდი აერთიანებს სერვისებს, ექიმების სამუშაო პროფილებს, საკონტაქტო დეტალებს და ვიზიტის მოთხოვნის ფორმას. ნაწილი მონაცემები სამუშაო ვერსიისთვისაა და კლინიკასთან დასადასტურებელია.",
   primaryCta: "ვიზიტის დაჯავშნა",
   secondaryCta: "სერვისების ნახვა",
   heroStats: [
-    ["8+", "მიმართულება"],
-    ["4", "დემო ექიმი"],
-    ["24 სთ", "უკუკავშირის მიზანი"]
+    ["8+", "ამბულატორიული მიმართულება"],
+    ["4", "სამუშაო პროფილი"],
+    ["09:00-18:00", "სამუშაო საათები"]
   ],
-  heroAvailabilityTitle: "დემო განრიგი",
+  heroAvailabilityTitle: "ვიზიტის მოთხოვნა",
   heroAvailabilityText: "თერაპია · კარდიოლოგია · პედიატრია",
   servicesLabel: "სერვისები",
   servicesHeadline: "ძირითადი სამედიცინო მიმართულებები",
-  servicesCta: "აირჩიეთ სერვისი და დაჯავშნეთ ვიზიტი",
+  servicesCta: "აირჩიეთ მიმართულება და მოითხოვეთ ვიზიტი",
   services: [
-    { title: "თერაპია", description: "პირველადი კონსულტაცია, გეგმიური კონტროლი და ყოველდღიური ჯანმრთელობის ზოგადი შეფასება.", price: "საწყისი ფასი: 45 ლარიდან" },
-    { title: "კარდიოლოგია", description: "წნევის, გულის რიტმისა და გულ-სისხლძარღვთა რისკების საწყისი შეფასება.", price: "საწყისი ფასი: 70 ლარიდან" },
-    { title: "პედიატრია", description: "ბავშვთა გეგმიური კონსულტაცია და მშობლისთვის გასაგები რეკომენდაციების მომზადება.", price: "საწყისი ფასი: 55 ლარიდან" },
-    { title: "ენდოკრინოლოგია", description: "ფარისებრი ჯირკვლის, დიაბეტის და ჰორმონული ბალანსის კონსულტაცია.", price: "საწყისი ფასი: 65 ლარიდან" },
-    { title: "გინეკოლოგია", description: "პრევენციული ვიზიტები და გეგმიური ამბულატორიული კონსულტაცია.", price: "საწყისი ფასი: 70 ლარიდან" },
-    { title: "ნევროლოგია", description: "თავის ტკივილის, ძილისა და ნერვული სისტემის ჩივილების საწყისი შეფასება.", price: "საწყისი ფასი: 75 ლარიდან" },
-    { title: "ლაბორატორიული კვლევები", description: "საბაზისო ანალიზები ექიმის რეკომენდაციით და პასუხების ორგანიზებული მიღება.", price: "საწყისი ფასი: 15 ლარიდან" },
-    { title: "ულტრაბგერითი კვლევა", description: "გეგმიური ულტრაბგერითი კვლევები შესაბამისი სპეციალისტის მითითებით.", price: "საწყისი ფასი: 60 ლარიდან" }
+    { title: "თერაპია", description: "პირველადი კონსულტაცია, გეგმური კონტროლი და ყოველდღიური ჩივილების საწყისი შეფასება ექიმთან.", price: "საწყისი ფასი: 45 ლარიდან" },
+    { title: "კარდიოლოგია", description: "არტერიული წნევის, გულის რიტმისა და გულ-სისხლძარღვთა რისკების გეგმური კონსულტაცია.", price: "საწყისი ფასი: 70 ლარიდან" },
+    { title: "პედიატრია", description: "ბავშვთა გეგმური ვიზიტი, ზრდა-განვითარების შეფასება და მშობლისთვის გასაგები რეკომენდაციები.", price: "საწყისი ფასი: 55 ლარიდან" },
+    { title: "ენდოკრინოლოგია", description: "ფარისებრი ჯირკვლის, შაქრიანი დიაბეტისა და ჰორმონული ბალანსის ამბულატორიული კონსულტაცია.", price: "საწყისი ფასი: 65 ლარიდან" },
+    { title: "გინეკოლოგია", description: "პრევენციული ვიზიტები და გეგმური ამბულატორიული კონსულტაცია მშვიდ გარემოში.", price: "ფასი დაზუსტდება კლინიკასთან" },
+    { title: "ნევროლოგია", description: "თავის ტკივილის, ძილისა და ნერვული სისტემის ჩივილების საწყისი შეფასება სპეციალისტთან.", price: "საწყისი ფასი: 75 ლარიდან" },
+    { title: "ლაბორატორიული კვლევები", description: "საბაზისო ანალიზების ორგანიზება ექიმის რეკომენდაციით და პასუხების მოწესრიგებული მიღება.", price: "საწყისი ფასი: 15 ლარიდან" },
+    { title: "ულტრაბგერითი კვლევა", description: "გეგმური ულტრაბგერითი კვლევები შესაბამისი სპეციალისტის მითითებით.", price: "ფასი დაზუსტდება კლინიკასთან" }
   ],
   doctorsLabel: "ექიმები",
-  doctorsHeadline: "დემო სპეციალისტების გუნდი",
-  doctorsNote: "ეს არის დემო მონაცემები პრეზენტაციისთვის; რეალური ექიმების სახელები, ფოტოები და კვალიფიკაცია უნდა დაამტკიცოს კლინიკამ.",
+  doctorsHeadline: "სპეციალისტების სამუშაო პროფილები",
+  doctorsNote: "პროფილები წარმოდგენილია ვებგვერდის სამუშაო ვერსიისთვის. რეალური სახელები, ფოტოები და კვალიფიკაცია საბოლოოდ კლინიკამ უნდა დაადასტუროს.",
   doctors: [
-    { name: "დრ. ნინო მაისურაძე", specialty: "თერაპევტი", note: "დემო პროფილი" },
-    { name: "დრ. გიორგი ქავთარაძე", specialty: "კარდიოლოგი", note: "დემო პროფილი" },
-    { name: "დრ. თამარ ლომიძე", specialty: "პედიატრი", note: "დემო პროფილი" },
-    { name: "დრ. მარიამ ბერიძე", specialty: "ენდოკრინოლოგი", note: "დემო პროფილი" }
+    { name: "დრ. ნინო მაისურაძე", specialty: "თერაპევტი", note: "პირველადი კონსულტაცია და გეგმური კონტროლი", image: "/assets/doctor-therapist.png" },
+    { name: "დრ. გიორგი ქავთარაძე", specialty: "კარდიოლოგი", note: "გულისა და წნევის ამბულატორიული შეფასება", image: "/assets/doctor-cardiologist.png" },
+    { name: "დრ. თამარ ლომიძე", specialty: "პედიატრი", note: "ბავშვთა გეგმური ვიზიტები და მშობლის კონსულტაცია", image: "/assets/doctor-pediatrician.png" },
+    { name: "დრ. მარიამ ბერიძე", specialty: "ენდოკრინოლოგი", note: "ჰორმონული და მეტაბოლური საკითხების კონსულტაცია", image: "/assets/doctor-endocrinologist.png" }
   ],
   benefits: [
-    { title: "გასაგები სტრუქტურა", text: "პაციენტს სწრაფად ხედავს სერვისებს, საკონტაქტო დეტალებს და ვიზიტის მოთხოვნის ფორმას." },
-    { title: "მინიმალური ფორმა", text: "ფორმა ითხოვს მხოლოდ იმ მონაცემებს, რაც საჭიროა ვიზიტზე დასაკავშირებლად." },
-    { title: "დემო-საფრთხის გარეშე", text: "ტექსტი არ ამტკიცებს ლიცენზიებს, ჯილდოებს ან ოფიციალურ ფასებს." },
-    { title: "ადვილად ჩანაცვლებადი", text: "კლინიკის რეალური მონაცემები თავმოყრილია ერთ რედაქტირებად სტრუქტურაში." }
+    { title: "გასაგები სტრუქტურა", text: "სერვისები, ექიმები, ფასები და საკონტაქტო ინფორმაცია ერთ გვერდზეა თავმოყრილი." },
+    { title: "მინიმალური ფორმა", text: "ვიზიტის მოთხოვნა ითხოვს მხოლოდ საკონტაქტო მონაცემებს და სასურველ დროს." },
+    { title: "უსაფრთხო ფორმულირება", text: "ტექსტი არ ამტკიცებს ლიცენზიებს, ჯილდოებს, შედეგებს ან ოფიციალურ ფასებს." },
+    { title: "ადვილად განახლებადი", text: "კლინიკის საბოლოო მონაცემები ადმინისტრატორს შეუძლია შეცვალოს კონტენტის მენეჯერიდან." }
   ],
   pricesLabel: "ფასები",
-  pricesHeadline: "საწყისი ფასები დემო ჩვენებისთვის",
-  pricesText: "ფასები მითითებულია როგორც საწყისი ან საორიენტაციო ინფორმაცია. საბოლოო ღირებულება დაზუსტდება კლინიკასთან და არ უნდა ჩაითვალოს ოფიციალურ საჯარო ფასად.",
+  pricesHeadline: "საწყისი ფასები და დასაზუსტებელი სერვისები",
+  pricesText: "ფასები მითითებულია როგორც საწყისი ან საორიენტაციო ინფორმაცია. საბოლოო ღირებულება დაზუსტდება კლინიკასთან და არ ითვლება ოფიციალურ საჯარო ფასად.",
   appointmentLabel: "დაჯავშნა",
   appointmentHeadline: "მოითხოვეთ ვიზიტი",
-  appointmentText: "შეავსეთ მინიმალური საკონტაქტო ინფორმაცია. ოპერატორი დაგიკავშირდებათ დროის დასადასტურებლად.",
+  appointmentText: "შეავსეთ მოკლე ფორმა. ოპერატორი დაგიკავშირდებათ დროისა და სპეციალისტის დასადასტურებლად.",
   privacyNote: "ფორმა არ ითხოვს დიაგნოზს, პირად ნომერს, სამედიცინო ისტორიას ან ანალიზის ფაილებს.",
   consentCopy: "გაგზავნით ადასტურებთ, რომ საკონტაქტო მონაცემები გამოიყენება მხოლოდ ვიზიტის მოთხოვნაზე პასუხისთვის.",
   commentPlaceholder: "არ მიუთითოთ დიაგნოზი ან მგრძნობიარე სამედიცინო ინფორმაცია",
   contactLabel: "კონტაქტი",
-  contactHeadline: "დაგვიკავშირდით",
+  contactHeadline: "რეგისტრატურა და სამუშაო საათები",
   phone: "+995 599 12 34 56",
   phoneHref: "+995599123456",
   email: "info@example-clinic.ge",
@@ -62,28 +62,28 @@ const clinicContent = {
   workingHours: "ორშაბათი-შაბათი, 09:00-18:00",
   mapTitle: "კლინიკის მდებარეობა",
   mapPlaceholder: "რუკის ადგილი",
-  mapNote: "რეალური რუკა დაემატება საბოლოო მისამართის დადასტურების შემდეგ",
-  footerText: "სუფთა, მშვიდი და პაციენტზე ორიენტირებული ამბულატორიული კლინიკის დემო ვერსია.",
+  mapNote: "რუკა და ზუსტი მისამართი დაემატება საბოლოო მონაცემების დადასტურების შემდეგ",
+  footerText: "პაციენტზე ორიენტირებული ამბულატორიული კლინიკის სამუშაო ვებგვერდი. საბოლოო მონაცემები კლინიკასთან დასადასტურებელია.",
   privacyLinkText: "პერსონალური მონაცემების დაცვა",
   backToSite: "საიტზე დაბრუნება",
-  demoVersionNote: "პირველი კლინიკური ვერსია",
+  demoVersionNote: "ამბულატორიული კლინიკა",
   heroSlides: [
     {
-      title: "ექიმისა და პაციენტის მშვიდი კონსულტაცია",
-      text: "მშვიდი სივრცე პირველი ვიზიტისა და გეგმიური კონსულტაციისთვის.",
-      image: "/assets/clinic-hero.png",
+      title: "კონსულტაცია მშვიდ გარემოში",
+      text: "პირველი ვიზიტი, გეგმური კონტროლი და მკაფიო კომუნიკაცია ექიმთან.",
+      image: "/assets/clinic-consultation.png",
       tone: "consultation"
     },
     {
-      title: "ორგანიზებული მიღება",
-      text: "კომპაქტური გზა სერვისამდე, ექიმამდე და სასურველ დრომდე.",
-      image: "/assets/clinic-hero.png",
+      title: "ორგანიზებული რეგისტრატურა",
+      text: "საკონტაქტო ინფორმაცია, სამუშაო საათები და ვიზიტის მოთხოვნა ერთ სივრცეში.",
+      image: "/assets/clinic-reception.png",
       tone: "reception"
     },
     {
-      title: "სერვისები ერთ სივრცეში",
-      text: "დემო მიმართულებები და კვლევები წარმოდგენილია მკაფიოდ და უსაფრთხოდ.",
-      image: "/assets/clinic-hero.png",
+      title: "დიაგნოსტიკა და ამბულატორიული სერვისები",
+      text: "მიმართულებები წარმოდგენილია გასაგებად, ზედმეტი სამედიცინო დაპირებების გარეშე.",
+      image: "/assets/clinic-diagnostics.png",
       tone: "diagnostics"
     }
   ],
@@ -126,20 +126,32 @@ function syncDerivedContent() {
 }
 
 function mergeClinicContent(overrides = {}) {
+  const normalizedOverrides = normalizeLegacyClinicContentOverrides(overrides);
   Object.assign(clinicContent, deepCopy(defaultClinicContent));
-  applyContentSection(overrides.siteInfo);
-  if (Array.isArray(overrides.heroSlides)) clinicContent.heroSlides = overrides.heroSlides;
-  if (Array.isArray(overrides.services)) clinicContent.services = overrides.services;
-  if (Array.isArray(overrides.doctors)) clinicContent.doctors = overrides.doctors;
-  if (Array.isArray(overrides.prices)) clinicContent.prices = overrides.prices;
-  applyContentSection(overrides.contact);
-  applyContentSection(overrides.footer);
-  applyContentSection(overrides.consentText);
+  applyContentSection(normalizedOverrides.siteInfo);
+  if (Array.isArray(normalizedOverrides.heroSlides)) clinicContent.heroSlides = normalizedOverrides.heroSlides;
+  if (Array.isArray(normalizedOverrides.services)) clinicContent.services = normalizedOverrides.services;
+  if (Array.isArray(normalizedOverrides.doctors)) clinicContent.doctors = normalizedOverrides.doctors;
+  if (Array.isArray(normalizedOverrides.prices)) clinicContent.prices = normalizedOverrides.prices;
+  applyContentSection(normalizedOverrides.contact);
+  applyContentSection(normalizedOverrides.footer);
+  applyContentSection(normalizedOverrides.consentText);
   syncDerivedContent();
 }
 
 function applyContentSection(section) {
   if (section && typeof section === "object" && !Array.isArray(section)) Object.assign(clinicContent, section);
+}
+
+function normalizeLegacyClinicContentOverrides(overrides = {}) {
+  const output = deepCopy(overrides || {});
+  if (output.siteInfo?.shortSlogan === "დემო კლინიკური ვებსაიტი") delete output.siteInfo;
+  if (output.footer?.footerText?.includes("დემო ვერსია")) delete output.footer;
+  if (Array.isArray(output.heroSlides) && output.heroSlides.some((slide) => String(slide.image || "").includes("plumb-") || String(slide.text || "").includes("დემო მიმართულებები"))) delete output.heroSlides;
+  if (Array.isArray(output.services) && output.services.some((service) => String(service.description || "").includes("ყოველდღიური ჯანმრთელობის ზოგადი შეფასება"))) delete output.services;
+  if (Array.isArray(output.doctors) && output.doctors.some((doctor) => String(doctor.note || "").includes("დემო პროფილი") || String(doctor.image || "").includes("/assets/categories/"))) delete output.doctors;
+  if (Array.isArray(output.prices) && output.prices.some((item) => item?.title === "გინეკოლოგია" && String(item.price || "").includes("70 ლარიდან"))) delete output.prices;
+  return output;
 }
 
 async function loadPublicContent() {
@@ -242,7 +254,7 @@ function renderClinic() {
     <main id="top">
       <section class="hero">
         <div class="container hero-grid">
-          <div class="hero-visual hero-slideshow" id="heroSlideshow" aria-label="კლინიკის დემო სლაიდები">
+          <div class="hero-visual hero-slideshow" id="heroSlideshow" aria-label="კლინიკის სლაიდები">
             <div class="hero-slides">
               ${clinicContent.heroSlides.map((slide, index) => `<article class="hero-slide slide-${slide.tone} ${index === 0 ? "active" : ""}" aria-hidden="${index === 0 ? "false" : "true"}">
                 <img src="${slide.image}" alt="${slide.title}">
@@ -295,7 +307,7 @@ function renderClinic() {
             <p>${clinicContent.doctorsNote}</p>
           </div>
           <div class="doctor-grid">
-            ${doctors.map(([name, specialty, experience], index) => `<article class="doctor-card"><div class="doctor-photo">${["ნმ","გქ","თლ","მბ"][index]}</div><h3>${name}</h3><p>${specialty}</p><span>${experience}</span><a class="btn ghost" href="#appointment" data-doctor="${name}">დაჯავშნა</a></article>`).join("")}
+            ${doctors.map(([name, specialty, experience, image], index) => `<article class="doctor-card"><div class="doctor-photo">${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(name)}">` : ["ნმ","გქ","თლ","მბ"][index]}</div><h3>${name}</h3><p>${specialty}</p><span>${experience}</span><a class="btn ghost" href="#appointment" data-doctor="${name}">დაჯავშნა</a></article>`).join("")}
           </div>
         </div>
       </section>
@@ -518,13 +530,13 @@ function clinicAssistantAnswer(question) {
     return `ვიზიტის მოთხოვნისთვის შეავსეთ ფორმა გვერდზე "${clinicContent.appointmentHeadline}". საჭიროა მხოლოდ სახელი, ტელეფონი, სერვისი და სასურველი დრო; ოპერატორი დაგიკავშირდებათ დასადასტურებლად.`;
   }
   if (/(სერვის|მიმართულ|service)/i.test(normalized)) {
-    return `დემო სერვისებია: ${clinicContent.services.slice(0, 6).map((service) => service.title).join(", ")}. სრული სია ჩანს სერვისების ბლოკში.`;
+    return `სერვისების სამუშაო სიაა: ${clinicContent.services.slice(0, 6).map((service) => service.title).join(", ")}. სრული სია ჩანს სერვისების ბლოკში.`;
   }
   if (/(ფას|ღირ|price|cost)/i.test(normalized)) {
     return `${clinicContent.pricesText} მაგალითები: ${clinicContent.services.slice(0, 3).map((service) => `${service.title} - ${service.price}`).join("; ")}.`;
   }
   if (/(ექიმ|doctor)/i.test(normalized)) {
-    return `${clinicContent.doctorsNote} დემო სია: ${clinicContent.doctors.map((doctor) => `${doctor.name} (${doctor.specialty})`).join(", ")}.`;
+    return `${clinicContent.doctorsNote} სამუშაო სია: ${clinicContent.doctors.map((doctor) => `${doctor.name} (${doctor.specialty})`).join(", ")}.`;
   }
   if (/(მისამართ|სად|კონტაქტ|ტელეფონ|დარეკ|საათ|address|contact|phone|hours)/i.test(normalized)) {
     return `კონტაქტი: ${clinicContent.phone}, ${clinicContent.email}. მისამართი: ${clinicContent.address}. სამუშაო საათები: ${clinicContent.workingHours}.`;
@@ -535,7 +547,7 @@ function clinicAssistantAnswer(question) {
   if (/(ადმინ|admin|პაციენტ)/i.test(normalized)) {
     return "ადმინის გვერდი განკუთვნილია მხოლოდ კლინიკის თანამშრომლებისთვის. პაციენტისთვის საკმარისია საჯარო ფორმით ვიზიტის მოთხოვნა ან ტელეფონით დაკავშირება.";
   }
-  return "შემიძლია გიპასუხოთ ზოგად კითხვებზე სერვისების, დემო ექიმების, საწყისი ფასების, სამუშაო საათების, მისამართისა და ვიზიტის მოთხოვნის შესახებ. სამედიცინო რჩევას ან დიაგნოზს არ ვიძლევი.";
+  return "შემიძლია გიპასუხოთ ზოგად კითხვებზე სერვისების, ექიმების სამუშაო პროფილების, საწყისი ფასების, სამუშაო საათების, მისამართისა და ვიზიტის მოთხოვნის შესახებ. სამედიცინო რჩევას ან დიაგნოზს არ ვიძლევი.";
 }
 
 async function submitAppointment(event) {
