@@ -340,7 +340,6 @@ function renderClinic() {
                 <div class="slide-caption">
                   <b>${slide.title}</b>
                   <span>${slide.text}</span>
-                  <a href="#appointment">${clinicContent.primaryCta}</a>
                 </div>
               </article>`).join("")}
             </div>
