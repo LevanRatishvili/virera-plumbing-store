@@ -319,6 +319,20 @@ function renderClinic() {
     <main id="top">
       <section class="hero">
         <div class="container hero-grid">
+          <div class="hero-copy">
+            <span class="eyebrow">${clinicContent.heroLabel}</span>
+            <h1>${clinicContent.clinicName}</h1>
+            <p>${clinicContent.shortSlogan}. ${clinicContent.aboutHeadline}</p>
+            <div class="hero-actions">
+              <a class="btn" href="#appointment">${clinicContent.primaryCta}</a>
+              <a class="btn ghost" href="#services">${clinicContent.secondaryCta}</a>
+            </div>
+            <div class="hero-stats" aria-label="კლინიკის მოკლე მაჩვენებლები">
+              <span><b>8+</b> მიმართულება</span>
+              <span><b>4</b> ექიმი</span>
+              <span><b>24 სთ</b> უკუკავშირი</span>
+            </div>
+          </div>
           <div class="hero-visual hero-slideshow" id="heroSlideshow" aria-label="კლინიკის სლაიდები">
             <div class="hero-slides">
               ${clinicContent.heroSlides.map((slide, index) => `<article class="hero-slide slide-${slide.tone} ${index === 0 ? "active" : ""}" aria-hidden="${index === 0 ? "false" : "true"}">
@@ -326,6 +340,7 @@ function renderClinic() {
                 <div class="slide-caption">
                   <b>${slide.title}</b>
                   <span>${slide.text}</span>
+                  <a href="#appointment">${clinicContent.primaryCta}</a>
                 </div>
               </article>`).join("")}
             </div>
