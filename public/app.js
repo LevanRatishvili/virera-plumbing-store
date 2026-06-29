@@ -66,7 +66,39 @@ const clinicContent = {
   footerText: "სუფთა, მშვიდი და პაციენტზე ორიენტირებული ამბულატორიული კლინიკის დემო ვერსია.",
   privacyLinkText: "პერსონალური მონაცემების დაცვა",
   backToSite: "საიტზე დაბრუნება",
-  demoVersionNote: "პირველი კლინიკური ვერსია"
+  demoVersionNote: "პირველი კლინიკური ვერსია",
+  heroSlides: [
+    {
+      title: "ექიმისა და პაციენტის მშვიდი კონსულტაცია",
+      text: "დემო ფოტო რეალური კლინიკის სურათით ჩანაცვლდება.",
+      image: "/assets/clinic-hero.png",
+      tone: "consultation"
+    },
+    {
+      title: "თანამედროვე მიღება და ორგანიზებული ვიზიტები",
+      text: "ადგილი კლინიკის რეალური მისაღების ფოტოსთვის.",
+      image: "",
+      tone: "reception"
+    },
+    {
+      title: "სერვისები და დიაგნოსტიკა ერთ სივრცეში",
+      text: "საწყისი დემო ვიზუალი კვლევებისა და მიმართულებებისთვის.",
+      image: "",
+      tone: "diagnostics"
+    }
+  ],
+  assistantTitle: "კლინიკის ასისტენტი",
+  assistantButton: "კითხვის დასმა",
+  assistantIntro: "გამარჯობა. გიპასუხებთ ზოგად კითხვებზე სერვისების, ფასების, მისამართისა და ვიზიტის მოთხოვნის შესახებ.",
+  assistantSafetyNote: "ასისტენტი არ სვამს დიაგნოზს და არ იძლევა მკურნალობის ან მედიკამენტის რჩევას.",
+  assistantPlaceholder: "დაწერეთ ზოგადი კითხვა",
+  assistantQuickQuestions: [
+    "როგორ ჩავეწერო ვიზიტზე?",
+    "რა სერვისები გაქვთ?",
+    "რა ღირს კონსულტაცია?",
+    "სად მდებარეობს კლინიკა?",
+    "რა მონაცემებს აგროვებს ფორმა?"
+  ]
 };
 
 const services = clinicContent.services.map(({ title, description, price }) => [title, description, price]);
@@ -82,6 +114,8 @@ const statusLabels = {
 };
 
 const app = document.querySelector("#app");
+let heroSlideTimer;
+let heroSlideIndex = 0;
 
 function api(path, options = {}) {
   return fetch(path, {
@@ -131,7 +165,7 @@ function renderClinic() {
           <a href="#prices">ფასები</a>
           <a href="#contact">კონტაქტი</a>
         </nav>
-        <a class="btn compact" href="#appointment">${clinicContent.primaryCta}</a>
+        <a class="btn compact header-cta" href="#appointment">${clinicContent.primaryCta}</a>
       </div>
     </header>
 
@@ -150,11 +184,18 @@ function renderClinic() {
               ${clinicContent.heroStats.map(([value, label]) => `<span><b>${value}</b> ${label}</span>`).join("")}
             </div>
           </div>
-          <div class="hero-visual">
-            <img src="/assets/clinic-hero.png" alt="თანამედროვე კლინიკის ექიმი და პაციენტი">
-            <div class="visit-card">
-              <b>${clinicContent.heroAvailabilityTitle}</b>
-              <span>${clinicContent.heroAvailabilityText}</span>
+          <div class="hero-visual hero-slideshow" id="heroSlideshow" aria-label="კლინიკის დემო სლაიდები">
+            <div class="hero-slides">
+              ${clinicContent.heroSlides.map((slide, index) => `<article class="hero-slide slide-${slide.tone} ${index === 0 ? "active" : ""}" aria-hidden="${index === 0 ? "false" : "true"}">
+                ${slide.image ? `<img src="${slide.image}" alt="${slide.title}">` : `<div class="slide-placeholder" aria-hidden="true"><span>${index + 1}</span></div>`}
+                <div class="slide-caption">
+                  <b>${slide.title}</b>
+                  <span>${slide.text}</span>
+                </div>
+              </article>`).join("")}
+            </div>
+            <div class="slide-dots" aria-label="სლაიდების არჩევა">
+              ${clinicContent.heroSlides.map((slide, index) => `<button type="button" class="${index === 0 ? "active" : ""}" data-slide="${index}" aria-label="${slide.title}" aria-pressed="${index === 0 ? "true" : "false"}"></button>`).join("")}
             </div>
           </div>
         </div>
@@ -265,12 +306,44 @@ function renderClinic() {
         <div><b>კონტაქტი</b><p>${clinicContent.phone}<br>${clinicContent.address}</p><a href="#privacy">${clinicContent.privacyLinkText}</a>${buildMarker()}</div>
       </div>
     </footer>
+
+    <div class="mobile-booking-bar" aria-label="სწრაფი მოქმედებები">
+      <a class="btn" href="#appointment">${clinicContent.primaryCta}</a>
+      <a class="btn ghost" href="tel:${clinicContent.phoneHref}">დარეკვა</a>
+    </div>
+
+    <div class="assistant-widget" id="clinicAssistant">
+      <button class="assistant-toggle" type="button" aria-expanded="false" aria-controls="assistantPanel">${clinicContent.assistantButton}</button>
+      <section class="assistant-panel" id="assistantPanel" aria-label="${clinicContent.assistantTitle}" hidden>
+        <div class="assistant-head">
+          <div>
+            <span class="eyebrow">${clinicContent.assistantTitle}</span>
+            <h2>${clinicContent.assistantButton}</h2>
+          </div>
+          <button class="assistant-close" type="button" aria-label="დახურვა">×</button>
+        </div>
+        <div class="assistant-messages" id="assistantMessages" aria-live="polite">
+          <div class="assistant-message assistant-message-bot">${clinicContent.assistantIntro}</div>
+        </div>
+        <div class="assistant-quick">
+          ${clinicContent.assistantQuickQuestions.map((question) => `<button type="button" data-assistant-question="${question}">${question}</button>`).join("")}
+        </div>
+        <form class="assistant-form" id="assistantForm">
+          <input name="question" autocomplete="off" maxlength="180" placeholder="${clinicContent.assistantPlaceholder}" aria-label="${clinicContent.assistantPlaceholder}">
+          <button class="btn compact" type="submit">გაგზავნა</button>
+        </form>
+        <p class="assistant-safety">${clinicContent.assistantSafetyNote}</p>
+      </section>
+    </div>
   `;
 
   bindClinicUi();
 }
 
 function bindClinicUi() {
+  bindHeroSlideshow();
+  bindAssistant();
+
   document.querySelectorAll("[data-service]").forEach((link) => {
     link.addEventListener("click", () => {
       setTimeout(() => {
@@ -290,6 +363,125 @@ function bindClinicUi() {
   });
 
   document.querySelector("#appointmentForm").addEventListener("submit", submitAppointment);
+}
+
+function bindHeroSlideshow() {
+  const slideshow = document.querySelector("#heroSlideshow");
+  if (!slideshow) return;
+  const slides = [...slideshow.querySelectorAll(".hero-slide")];
+  const dots = [...slideshow.querySelectorAll("[data-slide]")];
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const showSlide = (index) => {
+    heroSlideIndex = (index + slides.length) % slides.length;
+    slides.forEach((slide, slideIndex) => {
+      const active = slideIndex === heroSlideIndex;
+      slide.classList.toggle("active", active);
+      slide.setAttribute("aria-hidden", active ? "false" : "true");
+    });
+    dots.forEach((dot, dotIndex) => {
+      const active = dotIndex === heroSlideIndex;
+      dot.classList.toggle("active", active);
+      dot.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+  };
+
+  const stop = () => {
+    if (heroSlideTimer) clearInterval(heroSlideTimer);
+    heroSlideTimer = null;
+  };
+  const start = () => {
+    stop();
+    if (!prefersReducedMotion && slides.length > 1) {
+      heroSlideTimer = setInterval(() => showSlide(heroSlideIndex + 1), 5200);
+    }
+  };
+
+  dots.forEach((dot) => {
+    dot.addEventListener("click", () => {
+      showSlide(Number(dot.dataset.slide || 0));
+      start();
+    });
+  });
+  slideshow.addEventListener("mouseenter", stop);
+  slideshow.addEventListener("mouseleave", start);
+  slideshow.addEventListener("focusin", stop);
+  slideshow.addEventListener("focusout", start);
+  showSlide(heroSlideIndex);
+  start();
+}
+
+function bindAssistant() {
+  const widget = document.querySelector("#clinicAssistant");
+  if (!widget) return;
+  const toggle = widget.querySelector(".assistant-toggle");
+  const panel = widget.querySelector("#assistantPanel");
+  const close = widget.querySelector(".assistant-close");
+  const form = widget.querySelector("#assistantForm");
+  const input = form.querySelector("input[name='question']");
+  const messages = widget.querySelector("#assistantMessages");
+
+  const setOpen = (open) => {
+    panel.hidden = !open;
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    if (open) input.focus();
+  };
+
+  const ask = (question) => {
+    const cleanQuestion = String(question || "").trim();
+    if (!cleanQuestion) return;
+    addAssistantMessage(messages, cleanQuestion, "user");
+    addAssistantMessage(messages, clinicAssistantAnswer(cleanQuestion), "bot");
+    input.value = "";
+    messages.scrollTop = messages.scrollHeight;
+  };
+
+  toggle.addEventListener("click", () => setOpen(panel.hidden));
+  close.addEventListener("click", () => setOpen(false));
+  widget.querySelectorAll("[data-assistant-question]").forEach((button) => {
+    button.addEventListener("click", () => ask(button.dataset.assistantQuestion));
+  });
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    ask(input.value);
+  });
+}
+
+function addAssistantMessage(target, message, type) {
+  const item = document.createElement("div");
+  item.className = `assistant-message assistant-message-${type}`;
+  item.textContent = message;
+  target.append(item);
+}
+
+function clinicAssistantAnswer(question) {
+  const normalized = question.toLowerCase();
+  const medicalPattern = /(სიმპტომ|ტკივ|დიაგნოზ|მკურნალ|წამალ|მედიკამენტ|დოზ|სასწრაფ|გადაუდებელ|წნევ|სიცხ|გული|გულის|სისხლ|ორსულ|ანტიბიოტიკ|ანალიზის პასუხ|რეცეპტ|medicine|diagnos|treatment|symptom|emergency)/i;
+  if (medicalPattern.test(normalized)) {
+    return "ამ კითხვაზე სამედიცინო რჩევას ვერ მოგცემთ: დიაგნოზს, მკურნალობას, მედიკამენტს ან გადაუდებელ შეფასებას ასისტენტი არ განსაზღვრავს. ზოგადი დახმარებისთვის დაუკავშირდით კლინიკას, ხოლო გადაუდებელი მდგომარეობისას მიმართეთ სასწრაფო დახმარებას. გთხოვთ, აქ არ მიუთითოთ მგრძნობიარე სამედიცინო დეტალები.";
+  }
+  if (/(ჩაწერ|დაჯავშნ|ვიზიტ|appointment)/i.test(normalized)) {
+    return `ვიზიტის მოთხოვნისთვის შეავსეთ ფორმა გვერდზე "${clinicContent.appointmentHeadline}". საჭიროა მხოლოდ სახელი, ტელეფონი, სერვისი და სასურველი დრო; ოპერატორი დაგიკავშირდებათ დასადასტურებლად.`;
+  }
+  if (/(სერვის|მიმართულ|service)/i.test(normalized)) {
+    return `დემო სერვისებია: ${clinicContent.services.slice(0, 6).map((service) => service.title).join(", ")}. სრული სია ჩანს სერვისების ბლოკში.`;
+  }
+  if (/(ფას|ღირ|price|cost)/i.test(normalized)) {
+    return `${clinicContent.pricesText} მაგალითები: ${clinicContent.services.slice(0, 3).map((service) => `${service.title} - ${service.price}`).join("; ")}.`;
+  }
+  if (/(ექიმ|doctor)/i.test(normalized)) {
+    return `${clinicContent.doctorsNote} დემო სია: ${clinicContent.doctors.map((doctor) => `${doctor.name} (${doctor.specialty})`).join(", ")}.`;
+  }
+  if (/(მისამართ|სად|კონტაქტ|ტელეფონ|დარეკ|საათ|address|contact|phone|hours)/i.test(normalized)) {
+    return `კონტაქტი: ${clinicContent.phone}, ${clinicContent.email}. მისამართი: ${clinicContent.address}. სამუშაო საათები: ${clinicContent.workingHours}.`;
+  }
+  if (/(მონაცემ|ფორმა|პირად|data|privacy)/i.test(normalized)) {
+    return `${clinicContent.privacyNote} ${clinicContent.consentCopy}`;
+  }
+  if (/(ადმინ|admin|პაციენტ)/i.test(normalized)) {
+    return "ადმინის გვერდი განკუთვნილია მხოლოდ კლინიკის თანამშრომლებისთვის. პაციენტისთვის საკმარისია საჯარო ფორმით ვიზიტის მოთხოვნა ან ტელეფონით დაკავშირება.";
+  }
+  return "შემიძლია გიპასუხოთ ზოგად კითხვებზე სერვისების, დემო ექიმების, საწყისი ფასების, სამუშაო საათების, მისამართისა და ვიზიტის მოთხოვნის შესახებ. სამედიცინო რჩევას ან დიაგნოზს არ ვიძლევი.";
 }
 
 async function submitAppointment(event) {

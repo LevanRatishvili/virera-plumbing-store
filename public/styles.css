@@ -120,8 +120,8 @@ nav a:hover { color: var(--teal-dark); background: rgba(22,163,163,.09); }
 }
 h1, h2, h3, p { margin-top: 0; }
 h1 {
-  font-size: clamp(40px, 6vw, 72px);
-  line-height: 1.04;
+  font-size: clamp(36px, 4.6vw, 58px);
+  line-height: 1.08;
   margin-bottom: 18px;
   letter-spacing: 0;
 }
@@ -152,25 +152,109 @@ h1, h2, h3, p, a, span, b { overflow-wrap: anywhere; }
   box-shadow: var(--shadow);
   border: 1px solid white;
   background: var(--surface-soft);
+  min-height: 430px;
 }
-.hero-visual img {
-  width: 100%;
-  aspect-ratio: 16 / 11;
-  object-fit: cover;
+.hero-slides {
+  position: relative;
+  min-height: 430px;
 }
-.visit-card {
+.hero-slide {
   position: absolute;
-  left: 18px;
-  right: 18px;
-  bottom: 18px;
+  inset: 0;
+  display: grid;
+  align-items: end;
+  opacity: 0;
+  transform: translateX(10px);
+  transition: opacity .55s ease, transform .55s ease;
+  pointer-events: none;
+}
+.hero-slide.active {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+.hero-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  inset: 0;
+}
+.hero-slide::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(16,34,49,.04), rgba(16,34,49,.28));
+}
+.slide-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(135deg, rgba(31,132,216,.18), rgba(22,163,163,.16)),
+    linear-gradient(90deg, rgba(255,255,255,.34) 1px, transparent 1px),
+    #eef9fb;
+  background-size: auto, 42px 42px, auto;
+}
+.slide-placeholder span {
+  width: 86px;
+  height: 86px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255,255,255,.7);
+  color: var(--teal-dark);
+  font-size: 30px;
+  font-weight: 950;
+}
+.slide-reception .slide-placeholder {
+  background:
+    linear-gradient(135deg, rgba(31,132,216,.14), rgba(255,255,255,.55)),
+    linear-gradient(90deg, rgba(22,163,163,.12) 1px, transparent 1px),
+    #f7fcff;
+  background-size: auto, 36px 36px, auto;
+}
+.slide-diagnostics .slide-placeholder {
+  background:
+    linear-gradient(135deg, rgba(22,163,163,.18), rgba(31,132,216,.12)),
+    radial-gradient(circle at 72% 28%, rgba(255,255,255,.68), transparent 24%),
+    #f3fbff;
+}
+.slide-caption {
+  position: relative;
+  z-index: 2;
+  margin: 18px;
   padding: 16px;
   border-radius: var(--radius);
   background: rgba(255,255,255,.9);
   border: 1px solid rgba(255,255,255,.9);
   box-shadow: 0 20px 50px rgba(16,34,49,.16);
 }
-.visit-card b, .visit-card span { display: block; }
-.visit-card span { color: var(--muted); }
+.slide-caption b, .slide-caption span { display: block; }
+.slide-caption span { color: var(--muted); }
+.slide-dots {
+  position: absolute;
+  z-index: 3;
+  left: 18px;
+  top: 18px;
+  display: flex;
+  gap: 8px;
+}
+.slide-dots button {
+  width: 10px;
+  height: 10px;
+  padding: 0;
+  border: 1px solid rgba(255,255,255,.8);
+  border-radius: 50%;
+  background: rgba(255,255,255,.54);
+  cursor: pointer;
+}
+.slide-dots button.active {
+  width: 24px;
+  border-radius: 999px;
+  background: white;
+}
 
 .section { padding: 78px 0; }
 .section-head {
@@ -492,6 +576,112 @@ textarea { min-height: 112px; resize: vertical; }
 }
 .login-card .build-marker { color: var(--muted); }
 
+.mobile-booking-bar { display: none; }
+
+.assistant-widget {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 35;
+}
+.assistant-toggle {
+  min-height: 46px;
+  padding: 11px 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--teal-dark);
+  box-shadow: 0 16px 44px rgba(31,132,216,.14);
+  font-weight: 950;
+  cursor: pointer;
+}
+.assistant-panel {
+  position: absolute;
+  right: 0;
+  bottom: 58px;
+  width: min(360px, calc(100vw - 32px));
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: 0 24px 70px rgba(16,34,49,.18);
+}
+.assistant-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+.assistant-head h2 {
+  font-size: 22px;
+  margin-bottom: 8px;
+}
+.assistant-close {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+}
+.assistant-messages {
+  max-height: 220px;
+  overflow: auto;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border-radius: var(--radius);
+  background: #f7fcff;
+}
+.assistant-message {
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  font-size: 14px;
+}
+.assistant-message-bot {
+  background: white;
+  border: 1px solid var(--line);
+  color: var(--text);
+}
+.assistant-message-user {
+  justify-self: end;
+  background: var(--teal-dark);
+  color: white;
+}
+.assistant-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+.assistant-quick button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--teal-dark);
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 850;
+  cursor: pointer;
+}
+.assistant-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+.assistant-safety {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .hero-slide { transition: none; transform: none; }
+  .service-card:hover, .doctor-card:hover, .benefit-grid article:hover { transform: none; }
+}
+
 @media (max-width: 980px) {
   .header-grid, .hero-grid, .prices-grid, .appointment-grid, .contact-grid { grid-template-columns: 1fr; }
   .header-grid { padding: 14px 0; }
@@ -505,21 +695,64 @@ textarea { min-height: 112px; resize: vertical; }
 }
 
 @media (max-width: 640px) {
+  body { padding-bottom: 92px; }
   .container { width: min(100% - 24px, 1160px); }
-  .site-header { position: static; }
+  .site-header { position: sticky; top: 0; }
+  .header-grid {
+    min-height: 64px;
+    gap: 10px;
+  }
+  .brand { min-width: 0; }
+  .brand-mark { width: 38px; height: 38px; border-radius: 12px; font-size: 24px; }
+  .brand small { font-size: 11px; }
+  .header-cta { display: none; }
   nav a { padding-inline: 8px; font-size: 13px; }
-  h1 { font-size: 38px; }
+  h1 { font-size: 34px; line-height: 1.12; }
   .hero-stats, .benefit-grid, .service-grid, .doctor-grid, .footer-grid, .appointment-form { grid-template-columns: 1fr; }
   .wide { grid-column: auto; }
   .section { padding: 52px 0; }
   .hero { padding: 44px 0 46px; }
   .hero-actions .btn { width: 100%; min-width: 0; }
+  .hero-visual, .hero-slides { min-height: 330px; }
   .service-card { grid-template-rows: none; }
   .appointment-form { padding: 18px; gap: 16px; }
   .price-list div { display: grid; }
   .section-head.split { display: block; }
   .hero-visual { border-radius: var(--radius); }
-  .visit-card { position: static; border-radius: 0; }
+  .slide-caption { margin: 12px; padding: 14px; }
+  .slide-dots { left: 12px; top: 12px; }
+  .mobile-booking-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--line);
+    background: rgba(255,255,255,.94);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 -16px 44px rgba(31,132,216,.12);
+  }
+  .mobile-booking-bar .btn {
+    min-height: 44px;
+    padding: 10px 13px;
+    box-shadow: none;
+  }
+  .assistant-widget {
+    right: 12px;
+    bottom: 78px;
+  }
+  .assistant-panel {
+    right: -2px;
+    bottom: 56px;
+    width: min(360px, calc(100vw - 24px));
+    max-height: min(620px, calc(100vh - 164px));
+    overflow: auto;
+  }
+  .assistant-form { grid-template-columns: 1fr; }
   .admin-shell { width: min(100% - 24px, 1180px); }
   .admin-filters { grid-template-columns: 1fr; }
   .admin-table-wrap {
