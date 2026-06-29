@@ -638,6 +638,12 @@ textarea { min-height: 112px; resize: vertical; }
   gap: 14px;
   align-items: start;
 }
+.content-card-footer-consent {
+  grid-column: 1 / -1;
+}
+.content-card-footer-consent .content-field {
+  grid-column: 1 / -1;
+}
 .content-card {
   padding: 16px;
   border: 1px solid var(--line);
@@ -683,6 +689,7 @@ textarea { min-height: 112px; resize: vertical; }
 }
 .content-card-body {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   margin-top: 14px;
 }
@@ -691,7 +698,7 @@ textarea { min-height: 112px; resize: vertical; }
   color: var(--muted);
   font-weight: 800;
 }
-.content-card textarea { min-height: 112px; resize: vertical; }
+.content-card textarea { min-height: 120px; resize: vertical; }
 .content-list-card {
   box-shadow: none;
 }
@@ -766,6 +773,7 @@ textarea { min-height: 112px; resize: vertical; }
 .field-medium { grid-column: span 3; }
 .field-wide { grid-column: 1 / -1; }
 .field-long textarea { min-height: 150px; }
+.field-legal textarea { min-height: 190px; }
 .content-item-heroSlides .field-medium { grid-column: span 3; }
 .content-item-heroSlides .asset-field { grid-column: span 3; }
 .content-item-services .field-medium,
@@ -1111,6 +1119,15 @@ textarea { min-height: 112px; resize: vertical; }
   border-radius: var(--radius);
   background: var(--surface);
   box-shadow: 0 24px 70px rgba(16,34,49,.18);
+}
+.assistant-panel[hidden] {
+  display: none !important;
+  pointer-events: none;
+}
+.assistant-panel:not([hidden]) {
+  display: grid;
+  gap: 10px;
+  pointer-events: auto;
 }
 .assistant-head {
   display: flex;

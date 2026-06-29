@@ -574,17 +574,26 @@ function bindAssistant() {
   const messages = widget.querySelector("#assistantMessages");
   const quick = widget.querySelector("[data-assistant-quick]");
   const more = widget.querySelector("[data-assistant-more]");
+  let assistantOpen = false;
 
   const setQuickExpanded = (expanded) => {
     quick?.classList.toggle("expanded", expanded);
     more?.setAttribute("aria-expanded", expanded ? "true" : "false");
   };
 
-  const setOpen = (open) => {
-    panel.hidden = !open;
-    toggle.setAttribute("aria-expanded", open ? "true" : "false");
-    if (!open) setQuickExpanded(false);
-    if (open) setTimeout(() => input.focus(), 0);
+  const renderAssistantState = (options = {}) => {
+    panel.hidden = !assistantOpen;
+    panel.setAttribute("aria-hidden", assistantOpen ? "false" : "true");
+    toggle.setAttribute("aria-expanded", assistantOpen ? "true" : "false");
+    widget.classList.toggle("assistant-open", assistantOpen);
+    document.body.classList.remove("assistant-overlay-open");
+    if (!assistantOpen) setQuickExpanded(false);
+    if (assistantOpen && options.focusInput !== false) setTimeout(() => input.focus(), 0);
+  };
+
+  const setOpen = (open, options = {}) => {
+    assistantOpen = Boolean(open);
+    renderAssistantState(options);
   };
 
   const ask = (question) => {
@@ -597,7 +606,13 @@ function bindAssistant() {
     messages.scrollTop = messages.scrollHeight;
   };
 
-  toggle.addEventListener("click", () => setOpen(panel.hidden));
+  setOpen(false, { focusInput: false });
+
+  toggle.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setOpen(!assistantOpen);
+  });
   close.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -616,7 +631,7 @@ function bindAssistant() {
     ask(input.value);
   });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !panel.hidden) setOpen(false);
+    if (event.key === "Escape" && assistantOpen) setOpen(false, { focusInput: false });
   });
 }
 
@@ -1091,7 +1106,8 @@ function renderContentEditor() {
 }
 
 function contentCard(title, body, helper = "", resetSection = "", open = false) {
-  return `<details class="content-card" ${open ? "open" : ""}>
+  const sectionClass = resetSection ? ` content-card-${escapeHtml(resetSection)}` : "";
+  return `<details class="content-card${sectionClass}" ${open ? "open" : ""}>
     <summary><span><b>${escapeHtml(title)}</b>${helper ? `<small>${escapeHtml(helper)}</small>` : ""}</span></summary>
     <div class="content-card-body">
       ${body}
@@ -1111,7 +1127,9 @@ function inputField(label, path) {
 }
 
 function textField(label, path) {
-  return `<label class="content-field field-wide"><span>${escapeHtml(label)}</span><textarea data-content-path="${escapeHtml(path)}">${escapeHtml(getContentPath(path))}</textarea></label>`;
+  const legalField = path.startsWith("footer.") || path.startsWith("consentText.");
+  const className = `content-field field-wide field-long${legalField ? " field-legal" : ""}`;
+  return `<label class="${className}"><span>${escapeHtml(label)}</span><textarea data-content-path="${escapeHtml(path)}">${escapeHtml(getContentPath(path))}</textarea></label>`;
 }
 
 function listSection(section, title, addLabel, fields, labels, helper = "", open = false) {
