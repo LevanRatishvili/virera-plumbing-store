@@ -240,18 +240,28 @@ function googleMapLink() {
 
 function socialLinks() {
   return [
-    { key: "facebook", label: "Facebook", url: publicUrl(clinicContent.facebookUrl), icon: "f" },
-    { key: "instagram", label: "Instagram", url: publicUrl(clinicContent.instagramUrl), icon: "◎" },
-    { key: "whatsapp", label: "WhatsApp", url: publicUrl(clinicContent.whatsappUrl), icon: "☎" },
-    { key: "telegram", label: "Telegram", url: publicUrl(clinicContent.telegramUrl), icon: "↗" }
+    { key: "facebook", label: "Facebook", url: publicUrl(clinicContent.facebookUrl) },
+    { key: "instagram", label: "Instagram", url: publicUrl(clinicContent.instagramUrl) },
+    { key: "whatsapp", label: "WhatsApp", url: publicUrl(clinicContent.whatsappUrl) },
+    { key: "telegram", label: "Telegram", url: publicUrl(clinicContent.telegramUrl) }
   ].filter((item) => item.url);
+}
+
+function socialIcon(key) {
+  const icons = {
+    facebook: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 8.2h2.3V4.4c-.4-.1-1.8-.2-3.4-.2-3.4 0-5.7 2-5.7 5.8v3.3H3.5v4.3h3.7V24h4.5v-6.4h3.6l.6-4.3h-4.2v-2.9c0-1.2.4-2.2 2.3-2.2Z"/></svg>`,
+    instagram: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.1 2h9.8A5.1 5.1 0 0 1 22 7.1v9.8a5.1 5.1 0 0 1-5.1 5.1H7.1A5.1 5.1 0 0 1 2 16.9V7.1A5.1 5.1 0 0 1 7.1 2Zm.1 2.1a3 3 0 0 0-3.1 3.1v9.6a3 3 0 0 0 3.1 3.1h9.6a3 3 0 0 0 3.1-3.1V7.2a3 3 0 0 0-3.1-3.1H7.2Zm9.9 1.8a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4ZM12 7.2a4.8 4.8 0 1 1 0 9.6 4.8 4.8 0 0 1 0-9.6Zm0 2.1a2.7 2.7 0 1 0 0 5.4 2.7 2.7 0 0 0 0-5.4Z"/></svg>`,
+    whatsapp: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A11.7 11.7 0 0 0 2.1 17.6L1 23l5.5-1.4A11.7 11.7 0 0 0 20.5 3.5ZM12 20a8 8 0 0 1-4.1-1.1l-.3-.2-3.2.8.8-3.1-.2-.3A8 8 0 1 1 12 20Zm4.4-6c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.6.1a6.6 6.6 0 0 1-3.3-2.9c-.2-.3 0-.4.1-.6l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.8-1.9c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.3.3-1 1-1 2.3s1 2.7 1.1 2.9c.1.2 2 3.1 4.9 4.3 1.8.8 2.5.8 3.4.7.5-.1 1.4-.6 1.6-1.1.2-.6.2-1 .2-1.2-.1-.1-.3-.2-.5-.3Z"/></svg>`,
+    telegram: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.8 4.4 18.6 20c-.2 1.1-.8 1.4-1.7.9l-4.8-3.5-2.3 2.2c-.3.3-.5.5-1 .5l.3-4.9 8.9-8c.4-.3-.1-.5-.6-.2L6.5 13.9 1.8 12.5c-1-.3-1-1  .2-1.4L20.4 4c.9-.3 1.7.2 1.4.4Z"/></svg>`
+  };
+  return icons[key] || "";
 }
 
 function renderSocialLinks() {
   const links = socialLinks();
   if (!links.length) return "";
   return `<div class="social-links" aria-label="სოციალური ქსელები">
-    ${links.map((item) => `<a class="social-link social-link-${item.key}" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(item.label)}"><span aria-hidden="true">${escapeHtml(item.icon)}</span></a>`).join("")}
+    ${links.map((item) => `<a class="social-link social-link-${item.key}" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(item.label)}">${socialIcon(item.key)}</a>`).join("")}
   </div>`;
 }
 
@@ -448,8 +458,10 @@ function renderClinic() {
           <div class="assistant-message assistant-message-bot">${clinicContent.assistantIntro}</div>
         </div>
         <div class="assistant-quick" data-assistant-quick>
-          ${clinicContent.assistantQuickQuestions.map((question, index) => `<button class="${index > 2 ? "assistant-extra" : ""}" type="button" data-assistant-question="${question}">${question}</button>`).join("")}
-          ${clinicContent.assistantQuickQuestions.length > 3 ? `<button class="assistant-more" type="button" data-assistant-more aria-expanded="false">მეტი კითხვები</button>` : ""}
+          <button class="assistant-more" type="button" data-assistant-more aria-expanded="false">ხშირი კითხვები</button>
+          <div class="assistant-question-list">
+            ${clinicContent.assistantQuickQuestions.map((question) => `<button type="button" data-assistant-question="${question}">${question}</button>`).join("")}
+          </div>
         </div>
         <form class="assistant-form" id="assistantForm">
           <input name="question" autocomplete="off" maxlength="180" placeholder="${clinicContent.assistantPlaceholder}" aria-label="${clinicContent.assistantPlaceholder}">
@@ -560,16 +572,25 @@ function bindAssistant() {
   const form = widget.querySelector("#assistantForm");
   const input = form.querySelector("input[name='question']");
   const messages = widget.querySelector("#assistantMessages");
+  const quick = widget.querySelector("[data-assistant-quick]");
+  const more = widget.querySelector("[data-assistant-more]");
+
+  const setQuickExpanded = (expanded) => {
+    quick?.classList.toggle("expanded", expanded);
+    more?.setAttribute("aria-expanded", expanded ? "true" : "false");
+  };
 
   const setOpen = (open) => {
     panel.hidden = !open;
     toggle.setAttribute("aria-expanded", open ? "true" : "false");
-    if (open) input.focus();
+    if (!open) setQuickExpanded(false);
+    if (open) setTimeout(() => input.focus(), 0);
   };
 
   const ask = (question) => {
     const cleanQuestion = String(question || "").trim();
     if (!cleanQuestion) return;
+    setQuickExpanded(false);
     addAssistantMessage(messages, cleanQuestion, "user");
     addAssistantMessage(messages, clinicAssistantAnswer(cleanQuestion), "bot");
     input.value = "";
@@ -577,19 +598,25 @@ function bindAssistant() {
   };
 
   toggle.addEventListener("click", () => setOpen(panel.hidden));
-  close.addEventListener("click", () => setOpen(false));
+  close.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setOpen(false);
+    toggle.focus();
+  });
   widget.querySelectorAll("[data-assistant-question]").forEach((button) => {
     button.addEventListener("click", () => ask(button.dataset.assistantQuestion));
   });
-  widget.querySelector("[data-assistant-more]")?.addEventListener("click", (event) => {
-    const quick = widget.querySelector("[data-assistant-quick]");
-    const expanded = !quick.classList.contains("expanded");
-    quick.classList.toggle("expanded", expanded);
-    event.currentTarget.setAttribute("aria-expanded", expanded ? "true" : "false");
+  more?.addEventListener("click", (event) => {
+    event.preventDefault();
+    setQuickExpanded(!quick.classList.contains("expanded"));
   });
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     ask(input.value);
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !panel.hidden) setOpen(false);
   });
 }
 
@@ -1065,13 +1092,18 @@ function renderContentEditor() {
 
 function contentCard(title, body, helper = "", resetSection = "", open = false) {
   return `<details class="content-card" ${open ? "open" : ""}>
-    <summary><span><b>${escapeHtml(title)}</b>${helper ? `<small>${escapeHtml(helper)}</small>` : ""}</span>${resetSection ? sectionResetButton(resetSection, "საწყისზე დაბრუნება") : ""}</summary>
-    <div class="content-card-body">${body}</div>
+    <summary><span><b>${escapeHtml(title)}</b>${helper ? `<small>${escapeHtml(helper)}</small>` : ""}</span></summary>
+    <div class="content-card-body">
+      ${body}
+      ${resetSection ? sectionResetRow(resetSection) : ""}
+    </div>
   </details>`;
 }
 
-function sectionResetButton(section, label) {
-  return `<button class="btn ghost compact reset-btn" type="button" data-reset-section="${escapeHtml(section)}">${escapeHtml(label)}</button>`;
+function sectionResetRow(section) {
+  return `<div class="section-reset-row">
+    <button class="btn ghost compact reset-btn" type="button" data-reset-section="${escapeHtml(section)}">სექციის საწყისზე დაბრუნება</button>
+  </div>`;
 }
 
 function inputField(label, path) {
@@ -1085,7 +1117,7 @@ function textField(label, path) {
 function listSection(section, title, addLabel, fields, labels, helper = "", open = false) {
   const items = adminContentDraft[section] || [];
   return `<details class="content-card content-list-card" ${open ? "open" : ""}>
-    <summary><span><b>${escapeHtml(title)}</b>${helper ? `<small>${escapeHtml(helper)}</small>` : ""}</span>${sectionResetButton(section, "საწყისზე დაბრუნება")}</summary>
+    <summary><span><b>${escapeHtml(title)}</b>${helper ? `<small>${escapeHtml(helper)}</small>` : ""}</span></summary>
     <div class="content-list-head">
       <span>${items.length} ჩანაწერი</span>
       <button class="btn ghost compact" type="button" data-content-action="add" data-section="${section}">${escapeHtml(addLabel)}</button>
@@ -1108,6 +1140,7 @@ function listSection(section, title, addLabel, fields, labels, helper = "", open
         </div>
       </article>`).join("")}
     </div>
+    ${sectionResetRow(section)}
   </details>`;
 }
 
