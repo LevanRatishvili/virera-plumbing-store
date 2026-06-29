@@ -63,6 +63,12 @@ const clinicContent = {
   mapTitle: "კლინიკის მდებარეობა",
   mapPlaceholder: "რუკის ადგილი",
   mapNote: "რუკა და ზუსტი მისამართი დაემატება საბოლოო მონაცემების დადასტურების შემდეგ",
+  mapEmbedUrl: "https://www.google.com/maps?q=Tbilisi%20medical%20clinic&output=embed",
+  mapLink: "https://www.google.com/maps/search/?api=1&query=Tbilisi%20medical%20clinic",
+  facebookUrl: "https://www.facebook.com/",
+  instagramUrl: "https://www.instagram.com/",
+  whatsappUrl: "https://wa.me/995599123456",
+  telegramUrl: "https://t.me/telegram",
   footerText: "პაციენტზე ორიენტირებული ამბულატორიული კლინიკის სამუშაო ვებგვერდი. საბოლოო მონაცემები კლინიკასთან დასადასტურებელია.",
   privacyLinkText: "პერსონალური მონაცემების დაცვა",
   backToSite: "საიტზე დაბრუნება",
@@ -170,7 +176,7 @@ function contentPayloadFromCurrent() {
     services: deepCopy(clinicContent.services),
     doctors: deepCopy(clinicContent.doctors),
     prices: deepCopy(clinicContent.prices?.length ? clinicContent.prices : clinicContent.services.slice(0, 6).map(({ title, price }) => ({ title, price }))),
-    contact: pickContent(["phone", "phoneHref", "email", "address", "workingHours"]),
+    contact: pickContent(["phone", "phoneHref", "email", "address", "workingHours", "mapEmbedUrl", "mapLink", "facebookUrl", "instagramUrl", "whatsappUrl", "telegramUrl"]),
     footer: pickContent(["footerText", "privacyLinkText"]),
     consentText: pickContent(["privacyNote", "consentCopy", "commentPlaceholder"])
   };
@@ -214,6 +220,55 @@ function icon(label) {
 function buildMarker() {
   const commit = document.querySelector("meta[name='app-commit']")?.content || "";
   return commit ? `<small class="build-marker">ვერსია: ${escapeHtml(commit.slice(0, 7))}</small>` : "";
+}
+
+function publicUrl(value) {
+  const url = String(value || "").trim();
+  if (!url || url === "#") return "";
+  return /^https:\/\/[^\s<>"']+$/i.test(url) ? url : "";
+}
+
+function googleMapEmbedUrl() {
+  const configured = publicUrl(clinicContent.mapEmbedUrl);
+  if (configured) return configured;
+  return `https://www.google.com/maps?q=${encodeURIComponent(clinicContent.address || clinicContent.mapTitle)}&output=embed`;
+}
+
+function googleMapLink() {
+  return publicUrl(clinicContent.mapLink) || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(clinicContent.address || clinicContent.mapTitle)}`;
+}
+
+function socialLinks() {
+  return [
+    { key: "facebook", label: "Facebook", url: publicUrl(clinicContent.facebookUrl), icon: "f" },
+    { key: "instagram", label: "Instagram", url: publicUrl(clinicContent.instagramUrl), icon: "◎" },
+    { key: "whatsapp", label: "WhatsApp", url: publicUrl(clinicContent.whatsappUrl), icon: "☎" },
+    { key: "telegram", label: "Telegram", url: publicUrl(clinicContent.telegramUrl), icon: "↗" }
+  ].filter((item) => item.url);
+}
+
+function renderSocialLinks() {
+  const links = socialLinks();
+  if (!links.length) return "";
+  return `<div class="social-links" aria-label="სოციალური ქსელები">
+    ${links.map((item) => `<a class="social-link social-link-${item.key}" href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(item.label)}"><span aria-hidden="true">${escapeHtml(item.icon)}</span></a>`).join("")}
+  </div>`;
+}
+
+function renderContactMap() {
+  const mapLink = googleMapLink();
+  return `<div class="contact-map" aria-label="${escapeHtml(clinicContent.mapTitle)}">
+    <iframe src="${escapeHtml(googleMapEmbedUrl())}" title="${escapeHtml(clinicContent.mapTitle)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    <div class="map-fallback">
+      <span class="map-pin" aria-hidden="true">⌖</span>
+      <div>
+        <b>${escapeHtml(clinicContent.mapTitle)}</b>
+        <small>${escapeHtml(clinicContent.address)}</small>
+      </div>
+      <a href="${escapeHtml(mapLink)}" target="_blank" rel="noopener noreferrer">Google Maps-ში ნახვა</a>
+    </div>
+    <small class="map-note">${escapeHtml(clinicContent.mapNote)}</small>
+  </div>`;
 }
 
 function isAdminRoute() {
@@ -358,13 +413,12 @@ function renderClinic() {
             <p><b>მისამართი:</b> ${clinicContent.address}</p>
             <p><b>ელფოსტა:</b> ${clinicContent.email}</p>
             <p><b>სამუშაო საათები:</b> ${clinicContent.workingHours}</p>
-            <a class="btn compact call-btn" href="tel:${clinicContent.phoneHref}">დარეკვა</a>
+            <div class="contact-actions">
+              <a class="btn compact call-btn" href="tel:${clinicContent.phoneHref}">დარეკვა</a>
+              ${renderSocialLinks()}
+            </div>
           </div>
-          <div class="map-placeholder">
-            <span>${clinicContent.mapPlaceholder}</span>
-            <b>${clinicContent.mapTitle}</b>
-            <small>${clinicContent.mapNote}</small>
-          </div>
+          ${renderContactMap()}
         </div>
       </section>
     </main>
@@ -373,12 +427,15 @@ function renderClinic() {
       <div class="container footer-grid">
         <div><b>${clinicContent.clinicName}</b><p>${clinicContent.footerText}</p></div>
         <div><b>სერვისები</b>${services.slice(0, 5).map(([title]) => `<a href="#services">${title}</a>`).join("")}</div>
-        <div><b>კონტაქტი</b><p>${clinicContent.phone}<br>${clinicContent.address}</p><a href="#privacy">${clinicContent.privacyLinkText}</a>${buildMarker()}</div>
+        <div><b>კონტაქტი</b><p>${clinicContent.phone}<br>${clinicContent.address}</p>${renderSocialLinks()}<a href="#privacy">${clinicContent.privacyLinkText}</a>${buildMarker()}</div>
       </div>
     </footer>
 
     <div class="assistant-widget" id="clinicAssistant">
-      <button class="assistant-toggle" type="button" aria-expanded="false" aria-controls="assistantPanel">${clinicContent.assistantButton}</button>
+      <button class="assistant-toggle" type="button" aria-expanded="false" aria-controls="assistantPanel" aria-label="კლინიკის ასისტენტი">
+        <span class="assistant-toggle-icon" aria-hidden="true">AI</span>
+        <span class="assistant-toggle-text">${clinicContent.assistantButton}</span>
+      </button>
       <section class="assistant-panel" id="assistantPanel" aria-label="${clinicContent.assistantTitle}" hidden>
         <div class="assistant-head">
           <div>
@@ -408,6 +465,7 @@ function renderClinic() {
 function bindClinicUi() {
   bindHeroSlideshow();
   bindAssistant();
+  bindAssistantFooterAvoidance();
 
   document.querySelectorAll("[data-service]").forEach((link) => {
     link.addEventListener("click", () => {
@@ -428,6 +486,21 @@ function bindClinicUi() {
   });
 
   document.querySelector("#appointmentForm").addEventListener("submit", submitAppointment);
+}
+
+function bindAssistantFooterAvoidance() {
+  const widget = document.querySelector("#clinicAssistant");
+  const footer = document.querySelector(".site-footer");
+  if (!widget || !footer) return;
+  const update = () => {
+    const footerTop = footer.getBoundingClientRect().top;
+    const base = window.matchMedia("(max-width: 640px)").matches ? 14 : 22;
+    const overlap = Math.max(0, window.innerHeight - footerTop);
+    widget.style.bottom = overlap ? `${Math.round(overlap + base)}px` : "";
+  };
+  update();
+  window.addEventListener("scroll", update, { passive: true });
+  window.addEventListener("resize", update);
 }
 
 function bindHeroSlideshow() {
@@ -939,8 +1012,14 @@ function renderContentEditor() {
         inputField("ტელეფონი ბმულისთვის", "contact.phoneHref"),
         inputField("ელფოსტა", "contact.email"),
         inputField("მისამართი", "contact.address"),
-        inputField("სამუშაო საათები", "contact.workingHours")
-      ].join(""), "საჯარო საკონტაქტო ინფორმაცია და სამუშაო საათები.", "contact")}
+        inputField("სამუშაო საათები", "contact.workingHours"),
+        inputField("Google Maps embed", "contact.mapEmbedUrl"),
+        inputField("Google Maps ბმული", "contact.mapLink"),
+        inputField("Facebook", "contact.facebookUrl"),
+        inputField("Instagram", "contact.instagramUrl"),
+        inputField("WhatsApp", "contact.whatsappUrl"),
+        inputField("Telegram", "contact.telegramUrl")
+      ].join(""), "საჯარო საკონტაქტო ინფორმაცია, რუკა და სოციალური ბმულები.", "contact")}
       ${contentCard("სამართლებრივი ტექსტები", [
         textField("ფუტერის ტექსტი", "footer.footerText"),
         inputField("პერსონალური მონაცემების ბმული", "footer.privacyLinkText"),

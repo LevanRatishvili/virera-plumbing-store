@@ -262,7 +262,7 @@ function validateClinicContent(input) {
   for (const [key, value] of Object.entries(input)) {
     if (!clinicContentKeys.has(key)) throw new Error(`Unsupported content section: ${key}`);
     if (key === "siteInfo") output[key] = cleanTextObject(value, ["clinicName", "shortSlogan", "demoVersionNote", "primaryCta", "secondaryCta"], 180);
-    if (key === "contact") output[key] = cleanTextObject(value, ["phone", "phoneHref", "email", "address", "workingHours"], 220);
+    if (key === "contact") output[key] = cleanContactContent(value);
     if (key === "footer") output[key] = cleanTextObject(value, ["footerText", "privacyLinkText"], 420);
     if (key === "consentText") output[key] = cleanTextObject(value, ["privacyNote", "consentCopy", "commentPlaceholder"], 520);
     if (key === "heroSlides") output[key] = cleanContentList(value, 6, (item) => ({
@@ -302,6 +302,23 @@ function cleanTextObject(value, fields, maxLength) {
   return Object.fromEntries(fields.map((field) => [field, cleanContentText(value[field], maxLength)]));
 }
 
+function cleanContactContent(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Content section must be an object");
+  return {
+    phone: cleanContentText(value.phone, 220),
+    phoneHref: cleanContentText(value.phoneHref, 80),
+    email: cleanContentText(value.email, 220),
+    address: cleanContentText(value.address, 220),
+    workingHours: cleanContentText(value.workingHours, 220),
+    mapEmbedUrl: cleanPublicHttpsUrl(value.mapEmbedUrl, 520),
+    mapLink: cleanPublicHttpsUrl(value.mapLink, 520),
+    facebookUrl: cleanPublicHttpsUrl(value.facebookUrl, 260),
+    instagramUrl: cleanPublicHttpsUrl(value.instagramUrl, 260),
+    whatsappUrl: cleanPublicHttpsUrl(value.whatsappUrl, 260),
+    telegramUrl: cleanPublicHttpsUrl(value.telegramUrl, 260)
+  };
+}
+
 function cleanContentList(value, maxItems, mapper) {
   if (!Array.isArray(value)) throw new Error("Content section must be a list");
   if (value.length > maxItems) throw new Error(`Too many items; max ${maxItems}`);
@@ -313,6 +330,13 @@ function cleanContentText(value, maxLength) {
   if (text.length > maxLength) throw new Error(`Text exceeds ${maxLength} characters`);
   if (/(<|>|<\/|<script|javascript:|data:|onerror\s*=|onload\s*=)/i.test(text)) throw new Error("Unsafe content is not allowed");
   return text;
+}
+
+function cleanPublicHttpsUrl(value, maxLength) {
+  const url = cleanContentText(value, maxLength);
+  if (!url || url === "#") return "";
+  if (!/^https:\/\/[^\s<>"']+$/i.test(url)) throw new Error("Only https links are allowed");
+  return url;
 }
 
 function cleanAssetPath(value) {
